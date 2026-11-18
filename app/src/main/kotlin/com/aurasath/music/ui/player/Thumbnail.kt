@@ -410,7 +410,7 @@ fun Thumbnail(
     // Prefetch high-quality thumbnails for the carousel items (previous, current, and next)
     LaunchedEffect(mediaItems) {
         mediaItems.forEach { item ->
-            val artworkUri = item.mediaMetadata.artworkUri?.toString()?.resize(1200, 1200) ?: return@forEach
+            val artworkUri = item.mediaMetadata.artworkUri?.toString()?.resize(800, 800) ?: return@forEach
             val request = ImageRequest.Builder(context)
                 .data(artworkUri)
                 .memoryCachePolicy(CachePolicy.ENABLED)
@@ -788,7 +788,7 @@ private fun ThumbnailItem(
                 }
 
                 ThumbnailImage(
-                    artworkUri = artworkUriToUse?.resize(1200, 1200),
+                    artworkUri = artworkUriToUse?.resize(800, 800),
                     cropArtwork = cropAlbumArt
                 )
             }
@@ -1159,7 +1159,8 @@ internal fun nextThumbnailFallback(url: String?): String? = when {
     url.contains("maxresdefault.jpg") -> url.replace("maxresdefault.jpg", "sddefault.jpg")
     url.contains("sddefault.jpg") -> url.replace("sddefault.jpg", "hqdefault.jpg")
     url.contains("hqdefault.jpg") -> url.replace("hqdefault.jpg", "mqdefault.jpg")
-    // Either already at the bottom rung, or not an i.ytimg.com URL at all -- a
-    // googleusercontent size parameter has no ladder to walk.
+    url.contains("=w800") -> url.replace("=w800-h800", "=w544-h544")
+    url.contains("=w1200") -> url.replace("=w1200-h1200", "=w800-h800")
+    url.contains("=w544") -> url.replace("=w544-h544", "=w300-h300")
     else -> null
 }

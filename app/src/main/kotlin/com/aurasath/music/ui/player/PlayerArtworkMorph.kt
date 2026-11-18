@@ -408,7 +408,7 @@ fun MorphingCoverArt(
                 AsyncImage(
                     model = ImageRequest.Builder(context)
                         .data(activeCurUrl)
-                        .size(CoilSize.ORIGINAL)
+                        .diskCacheKey(curUrl)
                         .crossfade(false)
                         .memoryCachePolicy(CachePolicy.ENABLED)
                         .diskCachePolicy(CachePolicy.ENABLED)
@@ -432,7 +432,7 @@ fun MorphingCoverArt(
                 AsyncImage(
                     model = ImageRequest.Builder(context)
                         .data(activeCurUrl)
-                        .size(CoilSize.ORIGINAL)
+                        .diskCacheKey(curUrl)
                         .crossfade(false)
                         .memoryCachePolicy(CachePolicy.ENABLED)
                         .diskCachePolicy(CachePolicy.ENABLED)
@@ -457,8 +457,8 @@ fun MorphingCoverArt(
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(activeCurUrl)
-                    .size(CoilSize.ORIGINAL)
-                    .crossfade(false)
+                    .diskCacheKey(curUrl)
+                    .crossfade(true)
                     .memoryCachePolicy(CachePolicy.ENABLED)
                     .diskCachePolicy(CachePolicy.ENABLED)
                     .networkCachePolicy(CachePolicy.ENABLED)
@@ -466,6 +466,8 @@ fun MorphingCoverArt(
                 onError = {
                     activeCurUrl = nextThumbnailFallback(activeCurUrl)
                 },
+                placeholder = painterResource(R.drawable.thumbnail_fallback),
+                error = painterResource(R.drawable.thumbnail_fallback),
                 contentDescription = contentDescription,
                 contentScale = contentScale,
                 modifier = Modifier
@@ -510,7 +512,7 @@ fun MorphingCoverArt(
                 AsyncImage(
                     model = ImageRequest.Builder(context)
                         .data(activeOutUrl)
-                        .size(CoilSize.ORIGINAL)
+                        .diskCacheKey(outUrl)
                         .crossfade(false)
                         .memoryCachePolicy(CachePolicy.ENABLED)
                         .diskCachePolicy(CachePolicy.ENABLED)
@@ -534,7 +536,7 @@ fun MorphingCoverArt(
                 AsyncImage(
                     model = ImageRequest.Builder(context)
                         .data(activeOutUrl)
-                        .size(CoilSize.ORIGINAL)
+                        .diskCacheKey(outUrl)
                         .crossfade(false)
                         .memoryCachePolicy(CachePolicy.ENABLED)
                         .diskCachePolicy(CachePolicy.ENABLED)
@@ -559,13 +561,15 @@ fun MorphingCoverArt(
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(activeOutUrl)
-                    .size(CoilSize.ORIGINAL)
-                    .crossfade(false)
+                    .diskCacheKey(outUrl)
+                    .crossfade(true)
                     .memoryCachePolicy(CachePolicy.ENABLED)
                     .diskCachePolicy(CachePolicy.ENABLED)
                     .networkCachePolicy(CachePolicy.ENABLED)
                     .build(),
                 onError = { activeOutUrl = nextThumbnailFallback(activeOutUrl) },
+                placeholder = painterResource(R.drawable.thumbnail_fallback),
+                error = painterResource(R.drawable.thumbnail_fallback),
                 contentDescription = null,
                 contentScale = contentScale,
                 modifier = Modifier

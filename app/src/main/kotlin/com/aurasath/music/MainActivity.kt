@@ -445,10 +445,14 @@ private class TopBarChromeVisibility {
 class MainActivity : ComponentActivity() {
     companion object {
         var hasShownStartupSplash = false
-        private const val ACTION_SEARCH = "com.aurasath.music.action.SEARCH"
-        private const val ACTION_LIBRARY = "com.aurasath.music.action.LIBRARY"
-        const val ACTION_EXPAND_PLAYER = "com.aurasath.music.action.EXPAND_PLAYER"
-        const val ACTION_OPEN_LYRICS = "com.aurasath.music.action.OPEN_LYRICS"
+        private const val ACTION_SEARCH = "com.zuneo.music.action.SEARCH"
+        private const val ACTION_SEARCH_LEGACY = "com.aurasath.music.action.SEARCH"
+        private const val ACTION_LIBRARY = "com.zuneo.music.action.LIBRARY"
+        private const val ACTION_LIBRARY_LEGACY = "com.aurasath.music.action.LIBRARY"
+        const val ACTION_EXPAND_PLAYER = "com.zuneo.music.action.EXPAND_PLAYER"
+        const val ACTION_EXPAND_PLAYER_LEGACY = "com.aurasath.music.action.EXPAND_PLAYER"
+        const val ACTION_OPEN_LYRICS = "com.zuneo.music.action.OPEN_LYRICS"
+        const val ACTION_OPEN_LYRICS_LEGACY = "com.aurasath.music.action.OPEN_LYRICS"
         const val EXTRA_EXPAND_PLAYER = "expand_player"
         const val EXTRA_OPEN_LYRICS = "open_lyrics"
 
@@ -1107,8 +1111,8 @@ class MainActivity : ComponentActivity() {
                 }
                 val tabOpenedFromShortcut = remember {
                     when (intent?.action) {
-                        ACTION_SEARCH -> NavigationTab.LIBRARY
-                        ACTION_LIBRARY -> NavigationTab.SEARCH
+                        ACTION_SEARCH, ACTION_SEARCH_LEGACY -> NavigationTab.LIBRARY
+                        ACTION_LIBRARY, ACTION_LIBRARY_LEGACY -> NavigationTab.SEARCH
                         else -> null
                     }
                 }
