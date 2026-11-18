@@ -1,0 +1,247 @@
+/**
+ * AURASATH Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
+package com.aurasath.music.ui.component
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.unit.em
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import android.os.Build
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import com.aurasath.music.R
+import com.aurasath.music.constants.HomeCardCornerRadiusOverrideKey
+import com.aurasath.music.constants.HomeHeroCardHeightOverrideKey
+import com.aurasath.music.ui.component.shapes.ContinuousRoundedRectangle
+import com.aurasath.music.ui.theme.AppleTokens
+import com.aurasath.music.ui.utils.bounceClick
+import com.aurasath.music.utils.rememberPreference
+
+/**
+ * The "star of the day" card that opens Home.
+ *
+ * The lower band is the artwork itself, blurred and darkened, rather than a flat black
+ * scrim — the same frosted treatment [SpotlightCard] uses, so the title sits in the
+ * cover's own colour instead of under a grey wash.
+ *
+ * Still cheap: the blurred band is a second draw of the image Coil already decoded for
+ * the sharp one, so there is no extra decode and no backdrop sampling. Home's frame cost
+ * is dominated by how many rich rows compose at once, so the hero has to earn its place
+ * by replacing several rows of tiles, not by adding to them.
+ */
+import com.aurasath.music.ui.component.aquamorphicShadow
+import com.aurasath.music.ui.theme.AppColors
+
+@Composable
+fun HomeHeroCard(
+    title: String,
+    subtitle: String,
+    thumbnailUrl: String?,
+    onPlay: () -> Unit,
+    onShuffle: () -> Unit,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val (heightOverride) = rememberPreference(HomeHeroCardHeightOverrideKey, 0)
+    val (cornerOverride) = rememberPreference(HomeCardCornerRadiusOverrideKey, 0)
+    val cornerRadius = if (cornerOverride > 0) cornerOverride.dp else 28.dp
+    val shape = ContinuousRoundedRectangle(cornerRadius)
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(
+                if (heightOverride > 0) Modifier.height(heightOverride.dp) else Modifier.aspectRatio(4f / 3f)
+            )
+            .aquamorphicShadow(elevation = 6.dp, shape = shape)
+            .clip(shape)
+            .background(AppColors.cardSurface)
+            .bounceClick(onClick = onClick),
+    ) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val context = LocalContext.current
+            val density = LocalDensity.current
+            val request = remember(thumbnailUrl, maxWidth, maxHeight, context, density) {
+                with(density) {
+                    ImageRequest.Builder(context)
+                        .data(thumbnailUrl ?: R.drawable.zuneo_banner)
+                        .size(maxWidth.roundToPx(), maxHeight.roundToPx())
+                        .crossfade(false)
+                        .build()
+                }
+            }
+            AsyncImage(
+                model = request,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+
+        // Clean matte gradient scrim for text legibility (no GPU blur pass)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        0.35f to Color.Transparent,
+                        1f to Color.Black.copy(alpha = 0.75f),
+                    )
+                ),
+        )
+
+        // Top tag pill
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(AppleTokens.Gutter)
+                .clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.55f))
+                .padding(horizontal = 10.dp, vertical = 4.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)
+                )
+                Text(
+                    text = "FEATURED",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 0.08.em,
+                    color = Color.White.copy(alpha = 0.95f),
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(AppleTokens.Gutter),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.75f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(AppleTokens.ItemGap),
+                modifier = Modifier.padding(top = AppleTokens.ItemGap),
+            ) {
+                HeroPill(
+                    iconRes = R.drawable.play,
+                    label = stringResource(R.string.play),
+                    isPrimary = true,
+                    onClick = onPlay,
+                )
+                HeroPill(
+                    iconRes = R.drawable.shuffle,
+                    label = stringResource(R.string.shuffle),
+                    isPrimary = false,
+                    onClick = onShuffle,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeroPill(
+    iconRes: Int,
+    label: String,
+    isPrimary: Boolean = false,
+    onClick: () -> Unit,
+) {
+    val bg = if (isPrimary) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        Color.White.copy(alpha = 0.22f)
+    }
+    val contentColor = if (isPrimary) {
+        MaterialTheme.colorScheme.onPrimary
+    } else {
+        Color.White
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(bg)
+            .bounceClick(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        Icon(
+            painter = painterResource(iconRes),
+            contentDescription = null,
+            tint = contentColor,
+            modifier = Modifier.size(16.dp),
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = contentColor,
+            maxLines = 1,
+        )
+    }
+}
+
+/** Radius of the hero's frosted lower band. Matches [SpotlightCard]'s reflection. */
+private val HeroFrostBlurRadius = 24.dp
