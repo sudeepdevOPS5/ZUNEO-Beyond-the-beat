@@ -32,15 +32,25 @@ jobs:
           mkdir -p ~/.android
           keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
+      - name: Increase Swap Space
+        run: |
+          sudo swapoff -a
+          sudo fallocate -l 6G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          free -h
+
       - name: Grant Execute Permission for Gradlew
         run: chmod +x gradlew
 
       - name: Build Universal & ARM64 Release APKs
         run: |
           set -o pipefail
-          ./gradlew assembleUniversalGmsRelease assembleArm64GmsRelease --stacktrace --no-daemon -x lint 2>&1 | tee build.log
+          ./gradlew assembleArm64GmsRelease --stacktrace --no-daemon -x lint 2>&1 | tee build.log
+          ./gradlew assembleUniversalGmsRelease --stacktrace --no-daemon -x lint 2>&1 | tee -a build.log
         env:
-          GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx5120m -XX:+UseG1GC -XX:MaxMetaspaceSize=1024m' -Dorg.gradle.parallel=true"
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx3584m -XX:+UseG1GC -XX:MaxMetaspaceSize=768m' -Dorg.gradle.parallel=false"
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
           LASTFM_SECRET: ${{ secrets.LASTFM_SECRET }}
 
