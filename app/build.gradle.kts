@@ -41,7 +41,7 @@ android {
     ndkVersion = "27.0.12077973"
 
     defaultConfig {
-        applicationId = "com.aurasath.music"
+        applicationId = "com.zuneo.music"
         minSdk = 26
         targetSdk = 36
         versionCode = appVersionCode
@@ -134,18 +134,16 @@ android {
             storePassword = "android"
             keyAlias = "androiddebugkey"
             keyPassword = "android"
+            enableV1Signing = true
+            enableV2Signing = true
         }
         create("release") {
-            // Signing material comes from the environment only. Never hardcode a
-            // fallback password here: this file is published, the keystore is not,
-            // and a leaked release password plus a leaked keystore is an
-            // unrecoverable compromise of the app's signing identity.
-            // Set STORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD before a release build.
-            // local.properties is gitignored, so it is a safe place to keep them.
             storeFile = file("keystore/release.keystore")
             storePassword = localProperties.getProperty("STORE_PASSWORD") ?: System.getenv("STORE_PASSWORD")
             keyAlias = localProperties.getProperty("KEY_ALIAS") ?: System.getenv("KEY_ALIAS")
             keyPassword = localProperties.getProperty("KEY_PASSWORD") ?: System.getenv("KEY_PASSWORD")
+            enableV1Signing = true
+            enableV2Signing = true
         }
         getByName("debug") {
             keyAlias = "androiddebugkey"
@@ -156,6 +154,8 @@ android {
             } else {
                 file("${System.getProperty("user.home")}/.android/debug.keystore")
             }
+            enableV1Signing = true
+            enableV2Signing = true
         }
     }
 

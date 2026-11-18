@@ -274,7 +274,7 @@ fun AboutScreen(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Text(
-                                text = "Arsath Arsu",
+                                text = "Sudeep",
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 18.sp
@@ -371,7 +371,7 @@ fun AboutScreen(
                         modifier = Modifier
                             .weight(1f)
                             .bounceClick {
-                                uriHandler.safeOpenUri(context, "https://github.com/mohammedarsath-ars")
+                                uriHandler.safeOpenUri(context, "https://github.com/sudeepdevOPS5")
                             }
                     ) {
                         Box(
@@ -413,7 +413,7 @@ fun AboutScreen(
                     icon = painterResource(R.drawable.github),
                     title = { Text(stringResource(R.string.github_repository)) },
                     description = { Text(stringResource(R.string.view_source_code)) },
-                    onClick = { uriHandler.safeOpenUri(context, "https://github.com/mohammedarsath-ars/AURASATH") }
+                    onClick = { uriHandler.safeOpenUri(context, "https://github.com/sudeepdevOPS5/ZUNEO-Beyond-the-beat") }
                 ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.edit),
@@ -433,7 +433,7 @@ fun AboutScreen(
                     icon = painterResource(R.drawable.license_vivi),
                     title = { Text(stringResource(R.string.license)) },
                     description = { Text("GPL-3.0 • Free Open Source Software") },
-                    onClick = { uriHandler.safeOpenUri(context, "https://github.com/mohammedarsath-ars/AURASATH/blob/main/LICENSE") }
+                    onClick = { uriHandler.safeOpenUri(context, "https://github.com/sudeepdevOPS5/ZUNEO-Beyond-the-beat/blob/main/LICENSE") }
                 ),
             )
         )
@@ -447,7 +447,7 @@ fun AboutScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Crafted with ❤️ in India by Arsath Arsu",
+                text = "Crafted with ❤️ in India by Sudeep",
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 13.sp
