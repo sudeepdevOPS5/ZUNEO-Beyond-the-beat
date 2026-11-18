@@ -1105,8 +1105,18 @@ fun HomeScreen(
         similarRecommendations,
         lastPlayedRecommendation,
         homePage?.sections,
-        explorePage?.moodAndGenres
+        explorePage?.moodAndGenres,
+        selectedChip
     ) {
+        if (selectedChip != null) {
+            // When a mood/genre filter (e.g. Podcasts, Relax, Romance) is active,
+            // immediately elevate all returned mood sections directly to the top!
+            val moodSections = mutableListOf<HomeSection>()
+            homePage?.sections?.indices?.forEach { i ->
+                moodSections.add(HomeSection.HomePageSection(i))
+            }
+            return@remember moodSections
+        }
         val hidden = hiddenSectionIds.lineSequence()
             .map(String::trim)
             .filter(String::isNotEmpty)
@@ -1424,6 +1434,7 @@ fun HomeScreen(
                                 )
                                 Text(
                                     text = when {
+                                        selectedChip != null -> selectedChip?.title?.uppercase() ?: "MOOD"
                                         localOnly -> "OFFLINE MODE"
                                         currentHour in 5..11 -> "MORNING TUNES"
                                         currentHour in 12..16 -> "AFTERNOON MIX"
@@ -1438,7 +1449,7 @@ fun HomeScreen(
                             }
                             Spacer(Modifier.height(3.dp))
                             Text(
-                                text = greetingTitle,
+                                text = if (selectedChip != null) selectedChip?.title ?: greetingTitle else greetingTitle,
                                 fontSize = AppleTokens.TitleLarge,
                                 lineHeight = AppleTokens.TitleLargeLineHeight,
                                 fontWeight = FontWeight.ExtraBold,
@@ -1449,7 +1460,7 @@ fun HomeScreen(
                             )
                             Spacer(Modifier.height(2.dp))
                             Text(
-                                text = greetingSubtitle,
+                                text = if (selectedChip != null) "Curated " + (selectedChip?.title ?: "Music") + " for you" else greetingSubtitle,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = LocalContentColor.current.copy(alpha = 0.65f),
                                 maxLines = 1,

@@ -1800,8 +1800,14 @@ class MainActivity : ComponentActivity() {
                                                      verticalAlignment = Alignment.CenterVertically,
                                                      modifier = Modifier.padding(start = 4.dp)
                                                  ) {
+                                                     Image(
+                                                         painter = painterResource(R.drawable.zuneo_logo),
+                                                         contentDescription = "ZUNEO Logo",
+                                                         modifier = Modifier.size(28.dp).clip(CircleShape)
+                                                     )
+                                                     Spacer(Modifier.width(8.dp))
                                                      Text(
-                                                         text = "AURA",
+                                                         text = "ZU",
                                                          style = MaterialTheme.typography.titleLarge.copy(
                                                              fontFamily = rememberBrandFontFamily(),
                                                              fontWeight = FontWeight.Bold,
@@ -1811,7 +1817,7 @@ class MainActivity : ComponentActivity() {
                                                          color = LocalAccentTextColor.current,
                                                      )
                                                      Text(
-                                                         text = "SATH",
+                                                         text = "NEO",
                                                          style = MaterialTheme.typography.titleLarge.copy(
                                                              fontFamily = rememberBrandFontFamily(),
                                                              fontWeight = FontWeight.ExtraBold,
