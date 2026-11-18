@@ -8,6 +8,8 @@
 package com.aurasath.music.ui.component
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.graphics.luminance
+import com.aurasath.music.ui.theme.AquamorphicColors
 import com.aurasath.music.constants.AppBackgroundColorKey
 import com.aurasath.music.constants.AppTextColorKey
 import com.aurasath.music.utils.rememberPreference
@@ -329,7 +331,7 @@ private fun AppFloatingNavBarChrome(
             ),
             // The selection puck's lens/accent-tint effects only make sense when the
             // bar itself is sampling the app backdrop through liquid glass.
-            backdrop = if (useGlass) LocalAppBackdrop.current else null,
+            backdrop = null,
             // The puck tints its whole sampled icon row with this one colour, and a
             // second crisp copy of the icon (below, "the selected icon drawn a second
             // time") is redrawn on top in tabTextColor as the drag settles. The two
@@ -339,7 +341,7 @@ private fun AppFloatingNavBarChrome(
             // the contrast-correct choice (global text color when set, else the
             // glass system's own computed contrast) — reuse it instead of deriving
             // a second, different "correct" color.
-            accentColor = tabTextColor,
+            accentColor = selectedContentColor,
             searchMode = searchModeActive,
             searchBarContent = if (searchModeActive) {
                 { contentModifier ->
@@ -371,7 +373,7 @@ private fun AppFloatingNavBarChrome(
                     icon = {
                         Icon(
                             painter = painterResource(
-                                screen.icon(appleMusicUi)
+                                screen.icon(false)
                             ),
                             contentDescription = stringResource(screen.titleId),
                             tint = if (isSelected) selectedContentColor else unselectedContentColor,
@@ -408,7 +410,7 @@ private fun AppFloatingNavBarChrome(
                     icon = {
                         Icon(
                             painter = painterResource(
-                                screen.icon(appleMusicUi)
+                                screen.icon(false)
                             ),
                             contentDescription = stringResource(screen.titleId),
                             tint = if (isSelected) selectedContentColor else unselectedContentColor,

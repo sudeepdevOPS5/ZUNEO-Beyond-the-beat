@@ -33,6 +33,7 @@ import com.aurasath.music.ui.component.backdrop.isRenderEffectSupported
 import com.aurasath.music.ui.component.backdrop.effects.blur
 import com.aurasath.music.ui.component.backdrop.effects.colorControls
 import com.aurasath.music.ui.component.backdrop.effects.lens
+import com.aurasath.music.ui.theme.AquamorphicColors
 import com.aurasath.music.ui.component.backdrop.highlight.Highlight
 import com.aurasath.music.ui.component.backdrop.highlight.HighlightStyle
 import com.aurasath.music.ui.component.backdrop.shadow.Shadow
@@ -215,13 +216,11 @@ fun rememberDevicePerformanceTier(): DevicePerformanceTier {
 }
 
 /** Check if device is low-RAM; returns true for LOW tier */
-@Composable
 fun isLowRamDevice(): Boolean = false
 
 /**
  * Disabled in Aquamorphic design: returns false to ensure zero GPU-intensive glass/blur passes occur.
  */
-@Composable
 fun isGlassAllowed(): Boolean = false
 
 /**

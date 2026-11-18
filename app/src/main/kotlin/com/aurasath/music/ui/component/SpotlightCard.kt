@@ -107,7 +107,7 @@ fun SpotlightCard(
         modifier = modifier
             .width(artworkSize)
             .height(artworkSize + infoHeight)
-            .aquamorphicShadow(elevation = 4.dp, shape = ContinuousRoundedRectangle(AppleTokens.CardCorner))
+            .aquamorphicShadow(elevation = 4.dp, shapeRadius = AppleTokens.CardCorner)
             .clip(ContinuousRoundedRectangle(AppleTokens.CardCorner))
             .background(cardColor)
             .bounceClick(onClick = onClick),

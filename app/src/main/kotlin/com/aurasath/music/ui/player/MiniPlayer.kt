@@ -319,7 +319,7 @@ private fun NewMiniPlayer(
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val outlineColor = AppColors.divider
-    val onSurfaceColor = AppColors.textPrimary
+    val onSurfaceColor = AppColors.primaryText
     val errorColor = MaterialTheme.colorScheme.error
 
     // Same finger-tracking glow as the nav bar's drag puck (ported from Kyant0's
@@ -407,7 +407,7 @@ private fun NewMiniPlayer(
                 .then(if (isTablet) Modifier.width(500.dp).align(Alignment.Center) else Modifier.fillMaxWidth())
                 .height(64.dp)
                 .offset { IntOffset(offsetXAnimatable.value.roundToInt(), 0) }
-                .aquamorphicShadow(elevation = 6.dp, shape = miniPlayerShape)
+                .aquamorphicShadow(elevation = 6.dp, shapeRadius = 28.dp)
                 .clip(miniPlayerShape)
                 .background(color = backgroundColor)
         ) {

@@ -113,7 +113,7 @@ fun CinematicHeroCard(
         modifier = modifier
             .fillMaxWidth()
             .height(200.dp)
-            .aquamorphicShadow(elevation = 6.dp, shape = cardShape)
+            .aquamorphicShadow(elevation = 6.dp, shapeRadius = 28.dp)
             .clip(cardShape)
             .background(Color(0xFF1B1F24))
             .clickable(onClick = onClick)

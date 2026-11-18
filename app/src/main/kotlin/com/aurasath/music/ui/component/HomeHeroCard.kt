@@ -92,7 +92,7 @@ fun HomeHeroCard(
             .then(
                 if (heightOverride > 0) Modifier.height(heightOverride.dp) else Modifier.aspectRatio(4f / 3f)
             )
-            .aquamorphicShadow(elevation = 6.dp, shape = shape)
+            .aquamorphicShadow(elevation = 6.dp, shapeRadius = cornerRadius)
             .clip(shape)
             .background(AppColors.cardSurface)
             .bounceClick(onClick = onClick),
