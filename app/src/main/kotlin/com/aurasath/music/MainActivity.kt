@@ -568,18 +568,25 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = runCatching { installSplashScreen() }.getOrNull()
-        splashScreen?.setOnExitAnimationListener { splashScreenView ->
-            val fadeOut = android.animation.ObjectAnimator.ofFloat(
-                splashScreenView.view,
-                android.view.View.ALPHA,
-                1f,
-                0f
-            )
-            fadeOut.duration = 240L
-            fadeOut.interpolator = android.view.animation.AccelerateDecelerateInterpolator()
-            fadeOut.doOnEnd { splashScreenView.remove() }
-            fadeOut.start()
+        // Native splash screen is only supported on Android 12+ (API 31+).
+        // On Android 11 and older, installSplashScreen() attempts to inflate legacy splash_screen_view
+        // without splash attributes and crashes on Android 11 OEM devices (e.g., realme / ColorOS).
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            runCatching {
+                val splashScreen = installSplashScreen()
+                splashScreen.setOnExitAnimationListener { splashScreenView ->
+                    val fadeOut = android.animation.ObjectAnimator.ofFloat(
+                        splashScreenView.view,
+                        android.view.View.ALPHA,
+                        1f,
+                        0f
+                    )
+                    fadeOut.duration = 240L
+                    fadeOut.interpolator = android.view.animation.AccelerateDecelerateInterpolator()
+                    fadeOut.doOnEnd { splashScreenView.remove() }
+                    fadeOut.start()
+                }
+            }
         }
         super.onCreate(savedInstanceState)
 

@@ -236,97 +236,10 @@ fun PlayerV2(
         }
     }
 
-    // Gyroscopic 3D Parallax Tilt for Album Artwork (Battery-Optimized with Lifecycle & Sheet State)
-    val sensorManager = remember { context.getSystemService(android.content.Context.SENSOR_SERVICE) as? android.hardware.SensorManager }
-    var rawPitch by remember { mutableFloatStateOf(0f) }
-    var rawRoll by remember { mutableFloatStateOf(0f) }
-    val isPlayerExpanded = state.isExpanded
-
-    DisposableEffect(sensorManager, lifecycleOwner, isPlayerExpanded) {
-        if (sensorManager == null || !isPlayerExpanded) {
-            rawPitch = 0f
-            rawRoll = 0f
-            return@DisposableEffect onDispose {}
-        }
-        val sensor = sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_ROTATION_VECTOR)
-            ?: sensorManager.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER)
-
-        var isRegistered = false
-        val listener = object : android.hardware.SensorEventListener {
-            override fun onSensorChanged(event: android.hardware.SensorEvent?) {
-                if (event == null) return
-                if (event.sensor.type == android.hardware.Sensor.TYPE_ROTATION_VECTOR) {
-                    val rotationMatrix = FloatArray(9)
-                    android.hardware.SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
-                    val orientation = FloatArray(3)
-                    android.hardware.SensorManager.getOrientation(rotationMatrix, orientation)
-                    val pitchDeg = (Math.toDegrees(orientation[1].toDouble()).toFloat()).coerceIn(-12f, 12f)
-                    val rollDeg = (Math.toDegrees(orientation[2].toDouble()).toFloat()).coerceIn(-12f, 12f)
-                    rawPitch = pitchDeg
-                    rawRoll = rollDeg
-                } else if (event.sensor.type == android.hardware.Sensor.TYPE_ACCELEROMETER) {
-                    val ax = event.values[0]
-                    val ay = event.values[1]
-                    rawRoll = (-ax * 1.5f).coerceIn(-12f, 12f)
-                    rawPitch = (ay * 1.5f).coerceIn(-12f, 12f)
-                }
-            }
-
-            override fun onAccuracyChanged(s: android.hardware.Sensor?, accuracy: Int) {}
-        }
-
-        fun register() {
-            if (!isRegistered && sensor != null) {
-                sensorManager.registerListener(listener, sensor, android.hardware.SensorManager.SENSOR_DELAY_UI)
-                isRegistered = true
-            }
-        }
-
-        fun unregister() {
-            if (isRegistered) {
-                sensorManager.unregisterListener(listener)
-                isRegistered = false
-                rawPitch = 0f
-                rawRoll = 0f
-            }
-        }
-
-        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            when (event) {
-                androidx.lifecycle.Lifecycle.Event.ON_RESUME -> register()
-                androidx.lifecycle.Lifecycle.Event.ON_PAUSE,
-                androidx.lifecycle.Lifecycle.Event.ON_STOP -> unregister()
-                else -> Unit
-            }
-        }
-
-        lifecycleOwner.lifecycle.addObserver(observer)
-        if (lifecycleOwner.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) {
-            register()
-        }
-
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-            unregister()
-        }
-    }
-
-    val animatedPitch by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = rawPitch,
-        animationSpec = androidx.compose.animation.core.spring(
-            stiffness = androidx.compose.animation.core.Spring.StiffnessLow,
-            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioLowBouncy
-        ),
-        label = "gyroPitch"
-    )
-    val animatedRoll by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = rawRoll,
-        animationSpec = androidx.compose.animation.core.spring(
-            stiffness = androidx.compose.animation.core.Spring.StiffnessLow,
-            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioLowBouncy
-        ),
-        label = "gyroRoll"
-    )
+    // Gyroscopic 3D Parallax Tilt for Album Artwork
+    // OPTIMIZED for ZUNEO Aquamorphic: disabled heavy continuous sensor polling to maximize battery life and maintain silky smooth 120Hz frame rates
+    val animatedPitch = 0f
+    val animatedRoll = 0f
 
     val storedPlayerBackground by rememberEnumPreference(
         key = PlayerBackgroundStyleKey,

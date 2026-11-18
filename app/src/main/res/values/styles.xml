@@ -18,6 +18,8 @@
     </style>
 
     <!-- Widget Theme compatibility aliases -->
+    <style name="Theme.ZUNEO" parent="Theme.AURASATH" />
+    <style name="Theme.Widget.ZUNEO" parent="Theme.Widget.AURASATH" />
     <style name="Theme.Widget.PulseWave" parent="Theme.Widget.AURASATH" />
     <style name="Theme.Widget.BeatWave" parent="Theme.Widget.AURASATH" />
 </resources>
