@@ -1,5 +1,5 @@
-/**
- * AURASATH Project (C) 2026
+﻿/**
+ * ZUNEO Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 
@@ -8,6 +8,8 @@ package com.aurasath.music.ui.screens.search
 import com.aurasath.music.ui.utils.appTopBarWindowInsets
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.ui.geometry.Offset
+import com.music.innertube.pages.SearchSummary
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -257,9 +259,64 @@ fun OnlineSearchResult(
         )
     }
 
-    val heroUrl = remember(searchSummary, itemsPage) {
+    val orderedSummaries = remember(searchSummary) {
+        val raw = searchSummary?.summaries ?: return@remember emptyList()
+        val songsSection = raw.find { it.title.equals("Songs", ignoreCase = true) || it.title.equals("Track", ignoreCase = true) }
+        val topResultSection = raw.find {
+            it.title.equals("Top result", ignoreCase = true) ||
+            it.title.equals("Meilleur résultat", ignoreCase = true) ||
+            it.title.equals("Beste Ergebnisse", ignoreCase = true)
+        }
+
+        val topItem = topResultSection?.items?.firstOrNull()
+        val isTopResultAudio = topItem is SongItem && !topItem.isVideoSong
+        val isTopResultAlbumOrArtist = topItem is AlbumItem || topItem is ArtistItem
+        val isTopResultVideo = topItem is SongItem && topItem.isVideoSong
+
+        val result = mutableListOf<SearchSummary>()
+
+        if (isTopResultAudio || isTopResultAlbumOrArtist) {
+            if (topResultSection != null) result.add(topResultSection)
+            if (songsSection != null && songsSection != topResultSection) result.add(songsSection)
+        } else if (isTopResultVideo) {
+            // Priority 1: Songs & MP3s first!
+            if (songsSection != null) {
+                result.add(songsSection)
+            }
+            // Demote top video into Videos section
+            if (topResultSection != null) {
+                result.add(SearchSummary(title = "Top Video", items = topResultSection.items))
+            }
+        } else {
+            if (songsSection != null) result.add(songsSection)
+            if (topResultSection != null && topResultSection != songsSection) result.add(topResultSection)
+        }
+
+        // Priority 2: Albums
+        raw.find { it.title.equals("Albums", ignoreCase = true) }?.let { if (!result.contains(it)) result.add(it) }
+
+        // Priority 3: Artists
+        raw.find { it.title.equals("Artists", ignoreCase = true) }?.let { if (!result.contains(it)) result.add(it) }
+
+        // Priority 4: Videos
+        raw.find { it.title.equals("Videos", ignoreCase = true) }?.let { if (!result.contains(it)) result.add(it) }
+
+        // Priority 5: Playlists & Others
+        raw.forEach { s ->
+            if (!result.any { it.title.equals(s.title, ignoreCase = true) }) {
+                result.add(s)
+            }
+        }
+
+        result
+    }
+
+    val heroUrl = remember(orderedSummaries, itemsPage) {
         if (searchFilter == null) {
-            searchSummary?.summaries?.firstOrNull()?.items?.firstOrNull()?.thumbnail
+            val firstAudioItem = orderedSummaries.flatMap { it.items }.firstOrNull {
+                (it is SongItem && !it.isVideoSong) || it is AlbumItem || it is ArtistItem
+            } ?: orderedSummaries.firstOrNull()?.items?.firstOrNull()
+            firstAudioItem?.thumbnail
         } else {
             itemsPage?.items?.firstOrNull()?.thumbnail
         }
@@ -280,55 +337,61 @@ fun OnlineSearchResult(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(tint)
+            .background(if (pureBlack) Color.Black else Color(0xFF0B0F17))
     ) {
         if (hasCustomHomeBackground()) {
             // Matches Home/Library: the user's own picture, not this screen's
             // auto-generated hero blur, once a custom background is set.
             HomeImageBackground(withGradient = true)
-        } else {
-            // Blurred hero artwork background
-            if (heroUrl != null) {
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(heroUrl)
-                        .size(100, 100)
-                        .allowHardware(false)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .blur(150.dp)
-                )
-            }
-            if (pureBlack) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black)
-                )
-            } else {
-                // Adaptive overlay: if the background tint is light (e.g. pale/white artwork),
-                // apply a stronger dark wash (0.75f) so the search area remains dark and high-contrast.
-                val darkOverlayAlpha = if (tint.luminance() > 0.35f) 0.75f else 0.45f
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = darkOverlayAlpha))
-                )
-                // Primary-color wash at the bottom
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                0.55f to Color.Transparent,
-                                1f to MaterialTheme.colorScheme.primary.copy(alpha = 0.55f),
-                            )
+        } else if (!pureBlack) {
+            // Option 1: Aquamorphic Aurora Mesh Background
+            // Radial Aura 1: Top-left radiant glow derived from the top audio artwork's tint
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                tint.copy(alpha = 0.38f),
+                                tint.copy(alpha = 0.12f),
+                                Color.Transparent
+                            ),
+                            center = Offset(100f, 100f),
+                            radius = 1200f
                         )
-                )
-            }
+                    )
+            )
+
+            // Radial Aura 2: Top-right secondary complementary counter-glow
+            val accentColor = MaterialTheme.colorScheme.primary
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                accentColor.copy(alpha = 0.22f),
+                                Color.Transparent
+                            ),
+                            center = Offset(900f, 350f),
+                            radius = 950f
+                        )
+                    )
+            )
+
+            // Vertical Depth Scrim: Fades smoothly into deep obsidian black
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            0.0f to Color.Transparent,
+                            0.30f to Color(0xFF0B0F17).copy(alpha = 0.50f),
+                            0.65f to Color(0xFF0B0F17).copy(alpha = 0.92f),
+                            1.0f to Color(0xFF0B0F17)
+                        )
+                    )
+            )
         }
 
       HeroTintedContent(tint = tint, backdrop = heroBackdrop) {
@@ -383,7 +446,7 @@ fun OnlineSearchResult(
                             .heroPullZoom(heroZoom)
                     ) {
                         if (searchFilter == null) {
-                            searchSummary?.summaries?.forEach { summary ->
+                            orderedSummaries.forEach { summary ->
                                 item {
                                     NavigationTitle(
                                         title = summary.title
@@ -399,7 +462,7 @@ fun OnlineSearchResult(
                                 }
                             }
 
-                            if (searchSummary?.summaries?.isEmpty() == true) {
+                            if (orderedSummaries.isEmpty()) {
                                 item {
                                     EmptyPlaceholder(
                                         icon = R.drawable.search,
