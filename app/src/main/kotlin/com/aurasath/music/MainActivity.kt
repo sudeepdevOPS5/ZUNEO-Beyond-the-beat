@@ -1682,6 +1682,11 @@ class MainActivity : ComponentActivity() {
                             if (storedSearchSource == SearchSource.ONLINE) SearchSource.LOCAL else SearchSource.ONLINE
                     },
                     canToggleSource = !localOnlyMode,
+                    onRecognitionClick = {
+                        navController.navigate("recognition") {
+                            launchSingleTop = true
+                        }
+                    },
                     onTapSearchIcon = enterSearch,
                     onTapBar = {
                         searchKeyboardActive = true

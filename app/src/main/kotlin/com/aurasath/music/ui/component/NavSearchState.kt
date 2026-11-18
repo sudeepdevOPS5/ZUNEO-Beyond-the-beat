@@ -36,6 +36,7 @@ data class NavSearchState(
     // False in local-only mode: the source is pinned to LOCAL, so the toggle
     // would be a button that changes nothing.
     val canToggleSource: Boolean = true,
+    val onRecognitionClick: (() -> Unit)? = null,
     // Tap the search circle in normal mode -> plays the shrink-to-pill
     // animation, then navigates to search_input once it's done.
     val onTapSearchIcon: () -> Unit = {},

@@ -470,6 +470,21 @@ private fun SearchBarPlaceholder(
                 style = TextStyle(color = contentColor.copy(alpha = 0.6f), fontSize = 15.sp),
             )
         }
+        if (state.onRecognitionClick != null) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .bounceClick { state.onRecognitionClick.invoke() }
+                    .padding(9.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.mic),
+                    contentDescription = stringResource(R.string.recognize_music),
+                    tint = contentColor,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
         if (state.canToggleSource) {
             Box(
                 modifier = Modifier
@@ -595,6 +610,20 @@ fun NavBarSearchInputBar(
                 Icon(
                     painter = painterResource(R.drawable.close),
                     contentDescription = null,
+                    tint = onTint,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        } else if (state.onRecognitionClick != null) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .bounceClick { state.onRecognitionClick.invoke() }
+                    .padding(12.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.mic),
+                    contentDescription = stringResource(R.string.recognize_music),
                     tint = onTint,
                     modifier = Modifier.fillMaxSize(),
                 )

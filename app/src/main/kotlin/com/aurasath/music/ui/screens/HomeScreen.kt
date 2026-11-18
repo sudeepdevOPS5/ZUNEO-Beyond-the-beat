@@ -792,9 +792,6 @@ fun HomeScreen(
     val dailyDiscover by viewModel.dailyDiscover.collectAsStateWithLifecycle()
     val communityPlaylists by viewModel.communityPlaylists.collectAsStateWithLifecycle()
 
-    val allLocalItems by viewModel.allLocalItems.collectAsStateWithLifecycle()
-    val allYtItems by viewModel.allYtItems.collectAsStateWithLifecycle()
-
     // Local-only mode: same route, same chrome, on-device library instead of the feed.
     val localOnly by viewModel.localOnlyMode.collectAsStateWithLifecycle()
     val localSongs by viewModel.localSongs.collectAsStateWithLifecycle()
@@ -1639,61 +1636,6 @@ fun HomeScreen(
                 item(key = "bottom_spacer", contentType = "spacer") {
                     Spacer(modifier = Modifier.height(30.dp))
                 }
-            }
-
-            val (showHomeFab) = rememberPreference(ShowHomeFabKey, true)
-            if (showHomeFab) {
-                HideOnScrollFAB(
-                    visible = if (localOnly) localSongs.isNotEmpty()
-                    else allLocalItems.isNotEmpty() || allYtItems.isNotEmpty(),
-                    lazyListState = lazylistState,
-                    icon = R.drawable.shuffle,
-                    onClick = {
-                        if (localOnly) {
-                            // Nothing to pick a radio from offline — shuffle the library itself.
-                            playerConnection.playQueue(
-                                ListQueue(items = localSongs.shuffled().map { it.toMediaItem() }, startIndex = 0),
-                            )
-                            return@HideOnScrollFAB
-                        }
-                        val local = when {
-                            allLocalItems.isNotEmpty() && allYtItems.isNotEmpty() -> Random.nextFloat() < 0.5
-                            allLocalItems.isNotEmpty() -> true
-                            else -> false
-                        }
-                        scope.launch(Dispatchers.Main) {
-                            if (local) {
-                                when (val luckyItem = allLocalItems.random()) {
-                                    is Song -> playerConnection.playQueue(YouTubeQueue.radio(luckyItem.toMediaMetadata()))
-                                    is Album -> {
-                                        val albumWithSongs = withContext(Dispatchers.IO) {
-                                            database.albumWithSongs(luckyItem.id).first()
-                                        }
-                                        albumWithSongs?.let {
-                                            playerConnection.playQueue(LocalAlbumRadio(it))
-                                        }
-                                    }
-                                    is Artist -> {}
-                                    is Playlist -> {}
-                                }
-                            } else {
-                                when (val luckyItem = allYtItems.random()) {
-                                    is SongItem -> playerConnection.playQueue(YouTubeQueue.radio(luckyItem.toMediaMetadata()))
-                                    is AlbumItem -> playerConnection.playQueue(YouTubeAlbumRadio(luckyItem.playlistId))
-                                    is ArtistItem -> luckyItem.radioEndpoint?.let {
-                                        playerConnection.playQueue(YouTubeQueue(it))
-                                    }
-                                    is PlaylistItem -> luckyItem.playEndpoint?.let {
-                                        playerConnection.playQueue(YouTubeQueue(it))
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    onRecognitionClick = {
-                        navController.navigate("recognition")
-                    }
-                )
             }
         }
     }
