@@ -23,7 +23,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Set Up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Setup FFTW for Android
         uses: ./.github/actions/setup-fftw
