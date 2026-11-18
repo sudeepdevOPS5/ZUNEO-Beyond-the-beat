@@ -95,6 +95,7 @@ import com.aurasath.music.ui.component.LocalDownloads
 import androidx.compose.foundation.layout.size
 import androidx.media3.exoplayer.offline.Download.STATE_COMPLETED
 import com.aurasath.music.ui.component.LibraryBentoHeroRow
+import com.aurasath.music.ui.component.LibraryBentoDeck
 import com.aurasath.music.ui.component.LibrarySmartHubCard
 import com.aurasath.music.constants.PlaylistSortTypeKey
 import com.aurasath.music.constants.PlaylistViewTypeKey
@@ -103,6 +104,7 @@ import com.aurasath.music.constants.ShowDownloadedPlaylistKey
 import com.aurasath.music.constants.ShowLikedPlaylistKey
 import com.aurasath.music.constants.ShowTopPlaylistKey
 import com.aurasath.music.constants.ShowUploadedPlaylistKey
+import com.aurasath.music.constants.ShowLocalPlaylistKey
 import com.aurasath.music.constants.YtmSyncKey
 import com.aurasath.music.db.entities.Playlist
 import com.aurasath.music.db.entities.PlaylistEntity
@@ -228,6 +230,7 @@ fun LibraryPlaylistsScreen(
     val (showTop) = rememberPreference(ShowTopPlaylistKey, true)
     val (showCached) = rememberPreference(ShowCachedPlaylistKey, true)
     val (showUploaded) = rememberPreference(ShowUploadedPlaylistKey, true)
+    val (showLocal) = rememberPreference(ShowLocalPlaylistKey, true)
 
     val lazyListState = rememberLazyListState()
     val lazyGridState = rememberLazyGridState()
@@ -311,22 +314,6 @@ fun LibraryPlaylistsScreen(
                 color = MaterialTheme.colorScheme.secondary,
             )
 
-            IconButton(
-                onClick = { showCreatePlaylistDialog = true },
-                modifier = Modifier
-                    .padding(start = 8.dp, end = 4.dp)
-                    .size(36.dp)
-                    .background(Color.White.copy(alpha = 0.08f), CircleShape)
-                    .border(1.dp, Color.White.copy(alpha = 0.18f), CircleShape)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.add),
-                    contentDescription = stringResource(R.string.create_playlist),
-                    tint = Color.White,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-
             FlowRow(
                 modifier = Modifier.padding(start = 4.dp, end = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
@@ -393,65 +380,29 @@ fun LibraryPlaylistsScreen(
                     ) {
                         headerContent()
                     }
-
-                    if (showLiked || showDownloaded) {
+                    if (showLiked || showDownloaded || showTop || showLocal) {
                         item(
-                            key = "bento_hero_row_list",
+                            key = "bento_deck_list",
                             contentType = CONTENT_TYPE_HEADER,
                         ) {
-                            LibraryBentoHeroRow(
+                            LibraryBentoDeck(
                                 likedCount = likedCount,
                                 downloadCount = downloadCount,
+                                showLiked = showLiked,
+                                showDownloaded = showDownloaded,
+                                showTop = showTop,
+                                showLocal = showLocal,
+                                topTitle = topPlaylist.playlist.name,
+                                localTitle = stringResource(R.string.filter_local),
                                 onLikedClick = { navController.navigate("auto_playlist/liked") },
                                 onLikedLongClick = { navController.navigate("auto_playlist/liked") },
                                 onDownloadClick = { navController.navigate("auto_playlist/downloaded") },
                                 onDownloadLongClick = { navController.navigate("auto_playlist/downloaded") },
+                                onTopClick = { navController.navigate("top_playlist/$topSize") },
+                                onTopLongClick = { navController.navigate("top_playlist/$topSize") },
+                                onLocalClick = { navController.navigate("auto_playlist/local") },
+                                onLocalLongClick = { navController.navigate("auto_playlist/local") },
                                 modifier = Modifier.padding(bottom = 12.dp),
-                            )
-                        }
-                    }
-
-                    if (showTop) {
-                        item(
-                            key = "TopPlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            AutoPlaylistCard(
-                                playlist = topPlaylist,
-                                grid = false,
-                                onClick = { navController.navigate("top_playlist/$topSize") },
-                                showIconOnly = libraryIconsOnly,
-                                modifier = Modifier.animateItem(),
-                            )
-                        }
-                    }
-
-                    if (showCached) {
-                        item(
-                            key = "cachePlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            AutoPlaylistCard(
-                                playlist = cachePlaylist,
-                                grid = false,
-                                onClick = { navController.navigate("cache_playlist/cached") },
-                                showIconOnly = libraryIconsOnly,
-                                modifier = Modifier.animateItem(),
-                            )
-                        }
-                    }
-                    
-                    if (showUploaded) {
-                        item(
-                            key = "uploadedPlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            AutoPlaylistCard(
-                                playlist = uploadedPlaylist,
-                                grid = false,
-                                onClick = { navController.navigate("auto_playlist/uploaded") },
-                                showIconOnly = libraryIconsOnly,
-                                modifier = Modifier.animateItem(),
                             )
                         }
                     }
@@ -519,73 +470,31 @@ fun LibraryPlaylistsScreen(
                     ) {
                         headerContent()
                     }
-
-                    // --- BENTO HERO ROW (Liked & Downloaded) ---
-                    if (showLiked || showDownloaded) {
+                    if (showLiked || showDownloaded || showTop || showLocal) {
                         item(
-                            key = "bento_hero_row_grid",
+                            key = "bento_deck_grid",
                             span = { GridItemSpan(maxLineSpan) },
                             contentType = CONTENT_TYPE_HEADER,
                         ) {
-                            LibraryBentoHeroRow(
+                            LibraryBentoDeck(
                                 likedCount = likedCount,
                                 downloadCount = downloadCount,
+                                showLiked = showLiked,
+                                showDownloaded = showDownloaded,
+                                showTop = showTop,
+                                showLocal = showLocal,
+                                topTitle = topPlaylist.playlist.name,
+                                localTitle = stringResource(R.string.filter_local),
                                 onLikedClick = { navController.navigate("auto_playlist/liked") },
                                 onLikedLongClick = { navController.navigate("auto_playlist/liked") },
                                 onDownloadClick = { navController.navigate("auto_playlist/downloaded") },
                                 onDownloadLongClick = { navController.navigate("auto_playlist/downloaded") },
-                                modifier = Modifier.padding(bottom = 8.dp),
+                                onTopClick = { navController.navigate("top_playlist/$topSize") },
+                                onTopLongClick = { navController.navigate("top_playlist/$topSize") },
+                                onLocalClick = { navController.navigate("auto_playlist/local") },
+                                onLocalLongClick = { navController.navigate("auto_playlist/local") },
+                                modifier = Modifier.padding(bottom = 12.dp),
                             )
-                        }
-                    }
-
-                    // --- SECONDARY SMART HUBS (Top 50, Cached, Uploaded) ---
-                    if (showTop || showCached || showUploaded) {
-                        item(
-                            key = "bento_smart_row",
-                            span = { GridItemSpan(maxLineSpan) },
-                            contentType = CONTENT_TYPE_HEADER,
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = AppleTokens.Gutter, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                if (showTop) {
-                                    LibrarySmartHubCard(
-                                        title = topPlaylist.playlist.name,
-                                        subtitle = "Most played",
-                                        icon = R.drawable.trending_up,
-                                        accentColor = Color(0xFFF59E0B),
-                                        onClick = { navController.navigate("top_playlist/$topSize") },
-                                        onLongClick = { navController.navigate("top_playlist/$topSize") },
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-                                if (showCached) {
-                                    LibrarySmartHubCard(
-                                        title = stringResource(R.string.cached_playlist),
-                                        subtitle = "Quick replay",
-                                        icon = R.drawable.cached,
-                                        accentColor = Color(0xFF06B6D4),
-                                        onClick = { navController.navigate("cache_playlist/cached") },
-                                        onLongClick = { navController.navigate("cache_playlist/cached") },
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-                                if (showUploaded) {
-                                    LibrarySmartHubCard(
-                                        title = stringResource(R.string.uploaded_playlist),
-                                        subtitle = "Cloud library",
-                                        icon = R.drawable.cloud,
-                                        accentColor = Color(0xFFA855F7),
-                                        onClick = { navController.navigate("auto_playlist/uploaded") },
-                                        onLongClick = { navController.navigate("auto_playlist/uploaded") },
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-                            }
                         }
                     }
 

@@ -54,6 +54,7 @@ import com.aurasath.music.constants.HomeHeroCardHeightOverrideKey
 import com.aurasath.music.ui.component.shapes.ContinuousRoundedRectangle
 import com.aurasath.music.ui.theme.AppleTokens
 import com.aurasath.music.ui.utils.bounceClick
+import com.aurasath.music.ui.utils.resize
 import com.aurasath.music.utils.rememberPreference
 
 /**
@@ -100,12 +101,15 @@ fun HomeHeroCard(
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val context = LocalContext.current
             val density = LocalDensity.current
-            val request = remember(thumbnailUrl, maxWidth, maxHeight, context, density) {
+            val highResUrl = remember(thumbnailUrl) {
+                thumbnailUrl?.resize(1200, 1200)
+            }
+            val request = remember(highResUrl, maxWidth, maxHeight, context, density) {
                 with(density) {
                     ImageRequest.Builder(context)
-                        .data(thumbnailUrl ?: R.drawable.zuneo_banner)
+                        .data(highResUrl ?: R.drawable.zuneo_banner)
                         .size(maxWidth.roundToPx(), maxHeight.roundToPx())
-                        .crossfade(false)
+                        .crossfade(true)
                         .build()
                 }
             }

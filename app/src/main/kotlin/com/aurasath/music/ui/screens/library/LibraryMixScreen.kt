@@ -89,6 +89,7 @@ import com.aurasath.music.ui.component.LocalDownloads
 import androidx.compose.foundation.layout.size
 import androidx.media3.exoplayer.offline.Download.STATE_COMPLETED
 import com.aurasath.music.ui.component.LibraryBentoHeroRow
+import com.aurasath.music.ui.component.LibraryBentoDeck
 import com.aurasath.music.ui.component.LibrarySmartHubCard
 import com.aurasath.music.constants.PureBlackHeroBackgroundKey
 import com.aurasath.music.constants.MixSortTypeKey
@@ -364,22 +365,6 @@ fun LibraryMixScreen(
 
             Spacer(Modifier.weight(1f))
 
-            IconButton(
-                onClick = { showCreatePlaylistDialog = true },
-                modifier = Modifier
-                    .padding(end = 8.dp)
-                    .size(36.dp)
-                    .background(Color.White.copy(alpha = 0.08f), CircleShape)
-                    .border(1.dp, Color.White.copy(alpha = 0.18f), CircleShape)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.add),
-                    contentDescription = stringResource(R.string.create_playlist),
-                    tint = Color.White,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-
             FlowRow(
                 modifier = Modifier.padding(start = 4.dp, end = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
@@ -474,14 +459,20 @@ fun LibraryMixScreen(
                             headerContent()
                         }
 
-                        if (showLiked || showDownloaded) {
+                        if (showLiked || showDownloaded || showTop || showLocal) {
                             item(
-                                key = "bento_hero_row_list",
+                                key = "bento_deck_list",
                                 contentType = CONTENT_TYPE_HEADER,
                             ) {
-                                LibraryBentoHeroRow(
+                                LibraryBentoDeck(
                                     likedCount = likedCount,
                                     downloadCount = downloadCount,
+                                    showLiked = showLiked,
+                                    showDownloaded = showDownloaded,
+                                    showTop = showTop,
+                                    showLocal = showLocal,
+                                    topTitle = topPlaylist.playlist.name,
+                                    localTitle = stringResource(R.string.filter_local),
                                     onLikedClick = { navController.navigate("auto_playlist/liked") },
                                     onLikedLongClick = {
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -506,152 +497,36 @@ fun LibraryMixScreen(
                                             )
                                         }
                                     },
+                                    onTopClick = { navController.navigate("top_playlist/$topSize") },
+                                    onTopLongClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        menuState.show {
+                                            PlaylistMenu(
+                                                playlist = topPlaylist,
+                                                coroutineScope = coroutineScope,
+                                                onDismiss = menuState::dismiss,
+                                                autoPlaylist = true
+                                            )
+                                        }
+                                    },
+                                    onLocalClick = { navController.navigate("auto_playlist/local") },
+                                    onLocalLongClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        menuState.show {
+                                            PlaylistMenu(
+                                                playlist = localPlaylist,
+                                                coroutineScope = coroutineScope,
+                                                onDismiss = menuState::dismiss,
+                                                autoPlaylist = true
+                                            )
+                                        }
+                                    },
                                     modifier = Modifier.padding(bottom = 12.dp),
                                 )
                             }
                         }
 
-                        if (showTop) {
-                            item(
-                                key = "TopPlaylist",
-                                contentType = { CONTENT_TYPE_PLAYLIST },
-                            ) {
-                                PlaylistListItem(
-                                    playlist = topPlaylist,
-                                    autoPlaylist = true,
-                                    flat = true,
-                                    showIconOnly = libraryIconsOnly,
-                                    thumbnailOverrideUrl = topThumbnail.takeIf { it.isNotBlank() },
-                                    modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .combinedBounceClick(
-                                            onClick = {
-                                                navController.navigate("top_playlist/$topSize")
-                                            },
-                                            onLongClick = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                menuState.show {
-                                                    PlaylistMenu(
-                                                        playlist = topPlaylist,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss,
-                                                        autoPlaylist = true
-                                                    )
-                                                }
-                                            }
-                                        )
-                                        .animateItem(),
-                                )
-                            }
-                        }
-
-                        if (showCached) {
-                            item(
-                                key = "cachePlaylist",
-                                contentType = { CONTENT_TYPE_PLAYLIST },
-                            ) {
-                                PlaylistListItem(
-                                    playlist = cachePlaylist,
-                                    autoPlaylist = true,
-                                    flat = true,
-                                    showIconOnly = libraryIconsOnly,
-                                    thumbnailOverrideUrl = cacheThumbnail.takeIf { it.isNotBlank() },
-                                    modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .combinedBounceClick(
-                                            onClick = {
-                                                navController.navigate("cache_playlist/cached")
-                                            },
-                                            onLongClick = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                menuState.show {
-                                                    PlaylistMenu(
-                                                        playlist = cachePlaylist,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss,
-                                                        autoPlaylist = true
-                                                    )
-                                                }
-                                            }
-                                        )
-                                        .animateItem(),
-                            )
-                        }
-                    }
-
-                    if (showUploaded) {
-                        item(
-                            key = "uploadedPlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            PlaylistListItem(
-                                playlist = uploadedPlaylist,
-                                autoPlaylist = true,
-                                flat = true,
-                                showIconOnly = true,
-                                thumbnailOverrideUrl = uploadedThumbnail.takeIf { it.isNotBlank() },
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .combinedBounceClick(
-                                            onClick = {
-                                                navController.navigate("auto_playlist/uploaded")
-                                            },
-                                            onLongClick = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                menuState.show {
-                                                    PlaylistMenu(
-                                                        playlist = uploadedPlaylist,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss,
-                                                        autoPlaylist = true
-                                                    )
-                                                }
-                                            }
-                                        )
-                                        .animateItem(),
-                            )
-                        }
-                    }
-
-                    if (showLocal) {
-                        item(
-                            key = "localPlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            PlaylistListItem(
-                                playlist = localPlaylist,
-                                autoPlaylist = true,
-                                flat = true,
-                                showIconOnly = true,
-                                thumbnailOverrideUrl = localThumbnail.takeIf { it.isNotBlank() },
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .combinedBounceClick(
-                                            onClick = {
-                                                navController.navigate("auto_playlist/local")
-                                            },
-                                            onLongClick = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                menuState.show {
-                                                    PlaylistMenu(
-                                                        playlist = localPlaylist,
-                                                        coroutineScope = coroutineScope,
-                                                        onDismiss = menuState::dismiss,
-                                                        autoPlaylist = true
-                                                    )
-                                                }
-                                            }
-                                        )
-                                        .animateItem(),
-                            )
-                        }
-                    }
-
-                    items(
+                                            items(
                         items = allItems.distinctBy { it.id },
                         key = { it.id },
                         contentType = { CONTENT_TYPE_PLAYLIST },
@@ -821,16 +696,21 @@ fun LibraryMixScreen(
                     ) {
                         headerContent()
                     }
-                    // --- BENTO HERO ROW (Liked & Downloaded) ---
-                    if (showLiked || showDownloaded) {
+                    if (showLiked || showDownloaded || showTop || showLocal) {
                         item(
-                            key = "bento_hero_row_grid",
+                            key = "bento_deck_grid",
                             span = { GridItemSpan(maxLineSpan) },
                             contentType = CONTENT_TYPE_HEADER,
                         ) {
-                            LibraryBentoHeroRow(
+                            LibraryBentoDeck(
                                 likedCount = likedCount,
                                 downloadCount = downloadCount,
+                                showLiked = showLiked,
+                                showDownloaded = showDownloaded,
+                                showTop = showTop,
+                                showLocal = showLocal,
+                                topTitle = topPlaylist.playlist.name,
+                                localTitle = stringResource(R.string.filter_local),
                                 onLikedClick = { navController.navigate("auto_playlist/liked") },
                                 onLikedLongClick = {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -855,126 +735,32 @@ fun LibraryMixScreen(
                                         )
                                     }
                                 },
-                                modifier = Modifier.padding(bottom = 8.dp),
+                                onTopClick = { navController.navigate("top_playlist/$topSize") },
+                                onTopLongClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    menuState.show {
+                                        PlaylistMenu(
+                                            playlist = topPlaylist,
+                                            coroutineScope = coroutineScope,
+                                            onDismiss = menuState::dismiss,
+                                            autoPlaylist = true
+                                        )
+                                    }
+                                },
+                                onLocalClick = { navController.navigate("auto_playlist/local") },
+                                onLocalLongClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    menuState.show {
+                                        PlaylistMenu(
+                                            playlist = localPlaylist,
+                                            coroutineScope = coroutineScope,
+                                            onDismiss = menuState::dismiss,
+                                            autoPlaylist = true
+                                        )
+                                    }
+                                },
+                                modifier = Modifier.padding(bottom = 12.dp),
                             )
-                        }
-                    }
-
-                    // --- SECONDARY SMART HUBS ROW 1 (Top 50 + Local Audio) ---
-                    if (showTop || showLocal) {
-                        item(
-                            key = "bento_smart_row_1",
-                            span = { GridItemSpan(maxLineSpan) },
-                            contentType = CONTENT_TYPE_HEADER,
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = AppleTokens.Gutter, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                if (showTop) {
-                                    LibrarySmartHubCard(
-                                        title = topPlaylist.playlist.name,
-                                        subtitle = "Most played",
-                                        icon = R.drawable.trending_up,
-                                        accentColor = Color(0xFFF59E0B),
-                                        onClick = { navController.navigate("top_playlist/$topSize") },
-                                        onLongClick = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            menuState.show {
-                                                PlaylistMenu(
-                                                    playlist = topPlaylist,
-                                                    coroutineScope = coroutineScope,
-                                                    onDismiss = menuState::dismiss,
-                                                    autoPlaylist = true
-                                                )
-                                            }
-                                        },
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-                                if (showLocal) {
-                                    LibrarySmartHubCard(
-                                        title = stringResource(R.string.filter_local),
-                                        subtitle = "Device storage",
-                                        icon = R.drawable.library_music,
-                                        accentColor = Color(0xFF3B82F6),
-                                        onClick = { navController.navigate("auto_playlist/local") },
-                                        onLongClick = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            menuState.show {
-                                                PlaylistMenu(
-                                                    playlist = localPlaylist,
-                                                    coroutineScope = coroutineScope,
-                                                    onDismiss = menuState::dismiss,
-                                                    autoPlaylist = true
-                                                )
-                                            }
-                                        },
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // --- SECONDARY SMART HUBS ROW 2 (Cached + Uploaded) ---
-                    if (showCached || showUploaded) {
-                        item(
-                            key = "bento_smart_row_2",
-                            span = { GridItemSpan(maxLineSpan) },
-                            contentType = CONTENT_TYPE_HEADER,
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = AppleTokens.Gutter, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                if (showCached) {
-                                    LibrarySmartHubCard(
-                                        title = stringResource(R.string.cached_playlist),
-                                        subtitle = "Quick replay",
-                                        icon = R.drawable.cached,
-                                        accentColor = Color(0xFF06B6D4),
-                                        onClick = { navController.navigate("cache_playlist/cached") },
-                                        onLongClick = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            menuState.show {
-                                                PlaylistMenu(
-                                                    playlist = cachePlaylist,
-                                                    coroutineScope = coroutineScope,
-                                                    onDismiss = menuState::dismiss,
-                                                    autoPlaylist = true
-                                                )
-                                            }
-                                        },
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-                                if (showUploaded) {
-                                    LibrarySmartHubCard(
-                                        title = stringResource(R.string.uploaded_playlist),
-                                        subtitle = "Cloud library",
-                                        icon = R.drawable.cloud,
-                                        accentColor = Color(0xFFA855F7),
-                                        onClick = { navController.navigate("auto_playlist/uploaded") },
-                                        onLongClick = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            menuState.show {
-                                                PlaylistMenu(
-                                                    playlist = uploadedPlaylist,
-                                                    coroutineScope = coroutineScope,
-                                                    onDismiss = menuState::dismiss,
-                                                    autoPlaylist = true
-                                                )
-                                            }
-                                        },
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-                            }
                         }
                     }
 

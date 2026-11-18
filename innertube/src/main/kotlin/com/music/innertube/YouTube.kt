@@ -678,12 +678,16 @@ object YouTube {
         )
     }
 
-    suspend fun home(continuation: String? = null, params: String? = null): Result<HomePage> = runCatching {
+    suspend fun home(
+        browseId: String = "FEmusic_home",
+        continuation: String? = null,
+        params: String? = null,
+    ): Result<HomePage> = runCatching {
         if (continuation != null) {
             return@runCatching homeContinuation(continuation).getOrThrow()
         }
 
-        val response = innerTube.browse(WEB_REMIX, browseId = "FEmusic_home", params = params).body<BrowseResponse>()
+        val response = innerTube.browse(WEB_REMIX, browseId = browseId, params = params).body<BrowseResponse>()
         val continuation = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
             ?.tabRenderer?.content?.sectionListRenderer?.continuations?.getContinuation()
         val sectionListRender = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
@@ -694,9 +698,10 @@ object YouTube {
         // whole home load — same bug class as the Liked Music header NPE.
         // Degrade to an empty (still valid) page instead of failing outright.
         val sections = sectionListRender?.contents.orEmpty()
-            .mapNotNull { it.musicCarouselShelfRenderer }
-            .mapNotNull {
-                HomePage.Section.fromMusicCarouselShelfRenderer(it)
+            .mapNotNull { content ->
+                content.musicCarouselShelfRenderer?.let { HomePage.Section.fromMusicCarouselShelfRenderer(it) }
+                    ?: content.gridRenderer?.let { HomePage.Section.fromGridRenderer(it) }
+                    ?: content.musicShelfRenderer?.let { HomePage.Section.fromMusicShelfRenderer(it) }
             }.toMutableList()
         val chips = sectionListRender?.header?.chipCloudRenderer?.chips?.mapNotNull { HomePage.Chip.fromChipCloudChipRenderer(it) }
         HomePage(chips, sections, continuation)
@@ -707,13 +712,16 @@ object YouTube {
             innerTube.browse(WEB_REMIX, continuation = continuation).body<BrowseResponse>()
         val continuation =
             response.continuationContents?.sectionListContinuation?.continuations?.getContinuation()
+        val sections = response.continuationContents?.sectionListContinuation?.contents.orEmpty()
+            .mapNotNull { content ->
+                content.musicCarouselShelfRenderer?.let { HomePage.Section.fromMusicCarouselShelfRenderer(it) }
+                    ?: content.gridRenderer?.let { HomePage.Section.fromGridRenderer(it) }
+                    ?: content.musicShelfRenderer?.let { HomePage.Section.fromMusicShelfRenderer(it) }
+            }
         HomePage(
             null,
-            response.continuationContents?.sectionListContinuation?.contents
-            ?.mapNotNull { it.musicCarouselShelfRenderer }
-            ?.mapNotNull {
-                HomePage.Section.fromMusicCarouselShelfRenderer(it)
-            }.orEmpty(), continuation
+            sections,
+            continuation
         )
     }
 

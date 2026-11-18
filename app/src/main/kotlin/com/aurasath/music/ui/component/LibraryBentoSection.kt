@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -41,6 +40,182 @@ import com.aurasath.music.R
 import com.aurasath.music.ui.theme.AppleTokens
 import com.aurasath.music.ui.utils.combinedBounceClick
 
+/**
+ * Flagship Symmetrical 2x2 Bento Deck:
+ * Row 1: Liked Songs (Magenta) + Downloaded (Cyan)
+ * Row 2: My Top 50 (Flame) + Local Audio (Emerald)
+ */
+@Composable
+fun LibraryBentoDeck(
+    likedCount: Int,
+    downloadCount: Int,
+    showLiked: Boolean = true,
+    showDownloaded: Boolean = true,
+    showTop: Boolean = true,
+    showLocal: Boolean = true,
+    topTitle: String = "My Top 50",
+    localTitle: String = stringResource(R.string.filter_local),
+    onLikedClick: () -> Unit,
+    onLikedLongClick: () -> Unit = onLikedClick,
+    onDownloadClick: () -> Unit,
+    onDownloadLongClick: () -> Unit = onDownloadClick,
+    onTopClick: () -> Unit,
+    onTopLongClick: () -> Unit = onTopClick,
+    onLocalClick: () -> Unit,
+    onLocalLongClick: () -> Unit = onLocalClick,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = AppleTokens.Gutter),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        // Row 1: Liked Songs & Downloaded
+        if (showLiked || showDownloaded) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                if (showLiked) {
+                    BentoHubCard(
+                        title = stringResource(R.string.liked),
+                        subtitle = pluralStringResource(R.plurals.n_song, likedCount, likedCount),
+                        icon = R.drawable.favorite,
+                        gradient = listOf(Color(0xFF8A2BE2), Color(0xFFFF007A)),
+                        onClick = onLikedClick,
+                        onLongClick = onLikedLongClick,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (showDownloaded) {
+                    BentoHubCard(
+                        title = stringResource(R.string.offline),
+                        subtitle = if (downloadCount > 0) "$downloadCount songs • Ready" else "Ready for offline",
+                        icon = R.drawable.download,
+                        gradient = listOf(Color(0xFF0072FF), Color(0xFF00C9A7)),
+                        onClick = onDownloadClick,
+                        onLongClick = onDownloadLongClick,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+
+        // Row 2: My Top 50 & Local Audio
+        if (showTop || showLocal) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                if (showTop) {
+                    BentoHubCard(
+                        title = topTitle,
+                        subtitle = "Most played",
+                        icon = R.drawable.trending_up,
+                        gradient = listOf(Color(0xFFFF8C00), Color(0xFFFF0055)),
+                        onClick = onTopClick,
+                        onLongClick = onTopLongClick,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (showLocal) {
+                    BentoHubCard(
+                        title = localTitle,
+                        subtitle = "On device",
+                        icon = R.drawable.library_music,
+                        gradient = listOf(Color(0xFF00C9A7), Color(0xFF0072FF)),
+                        onClick = onLocalClick,
+                        onLongClick = onLocalLongClick,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun BentoHubCard(
+    title: String,
+    subtitle: String,
+    @DrawableRes icon: Int,
+    gradient: List<Color>,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .height(112.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(Brush.linearGradient(colors = gradient))
+            .border(
+                BorderStroke(1.2.dp, Color.White.copy(alpha = 0.28f)),
+                RoundedCornerShape(20.dp)
+            )
+            .combinedBounceClick(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
+    ) {
+        // Specular radial reflection
+        Box(
+            modifier = Modifier
+                .size(90.dp)
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.24f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(Color.White.copy(alpha = 0.22f), CircleShape)
+                    .border(1.dp, Color.White.copy(alpha = 0.38f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painterResource(icon),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(19.dp),
+                )
+            }
+
+            Column {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White.copy(alpha = 0.85f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun LibraryBentoHeroRow(
     likedCount: Int,
@@ -55,163 +230,26 @@ fun LibraryBentoHeroRow(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = AppleTokens.Gutter),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        // Liked Songs Bento Hero
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .height(118.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF8A2BE2),
-                            Color(0xFFFF007A)
-                        )
-                    )
-                )
-                .border(
-                    BorderStroke(1.2.dp, Color.White.copy(alpha = 0.28f)),
-                    RoundedCornerShape(20.dp)
-                )
-                .combinedBounceClick(
-                    onClick = onLikedClick,
-                    onLongClick = onLikedLongClick
-                )
-        ) {
-            // Specular radial reflection
-            Box(
-                modifier = Modifier
-                    .size(90.dp)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.24f),
-                                Color.Transparent
-                            )
-                        )
-                    )
-            )
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .background(Color.White.copy(alpha = 0.22f), CircleShape)
-                        .border(1.dp, Color.White.copy(alpha = 0.38f), CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.favorite),
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(19.dp),
-                    )
-                }
-
-                Column {
-                    Text(
-                        text = stringResource(R.string.liked),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = pluralStringResource(R.plurals.n_song, likedCount, likedCount),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.White.copy(alpha = 0.85f),
-                        maxLines = 1,
-                    )
-                }
-            }
-        }
-
-        // Downloaded / Offline Bento Hero
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .height(118.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF0072FF),
-                            Color(0xFF00C9A7)
-                        )
-                    )
-                )
-                .border(
-                    BorderStroke(1.2.dp, Color.White.copy(alpha = 0.28f)),
-                    RoundedCornerShape(20.dp)
-                )
-                .combinedBounceClick(
-                    onClick = onDownloadClick,
-                    onLongClick = onDownloadLongClick
-                )
-        ) {
-            // Specular radial reflection
-            Box(
-                modifier = Modifier
-                    .size(90.dp)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.24f),
-                                Color.Transparent
-                            )
-                        )
-                    )
-            )
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .background(Color.White.copy(alpha = 0.22f), CircleShape)
-                        .border(1.dp, Color.White.copy(alpha = 0.38f), CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.download),
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(19.dp),
-                    )
-                }
-
-                Column {
-                    Text(
-                        text = stringResource(R.string.offline),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = if (downloadCount > 0) "$downloadCount songs • Ready" else "Ready for offline",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.White.copy(alpha = 0.85f),
-                        maxLines = 1,
-                    )
-                }
-            }
-        }
+        BentoHubCard(
+            title = stringResource(R.string.liked),
+            subtitle = pluralStringResource(R.plurals.n_song, likedCount, likedCount),
+            icon = R.drawable.favorite,
+            gradient = listOf(Color(0xFF8A2BE2), Color(0xFFFF007A)),
+            onClick = onLikedClick,
+            onLongClick = onLikedLongClick,
+            modifier = Modifier.weight(1f),
+        )
+        BentoHubCard(
+            title = stringResource(R.string.offline),
+            subtitle = if (downloadCount > 0) "$downloadCount songs • Ready" else "Ready for offline",
+            icon = R.drawable.download,
+            gradient = listOf(Color(0xFF0072FF), Color(0xFF00C9A7)),
+            onClick = onDownloadClick,
+            onLongClick = onDownloadLongClick,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 

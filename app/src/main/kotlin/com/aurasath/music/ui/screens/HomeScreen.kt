@@ -2013,7 +2013,7 @@ private fun LazyListScope.heroSection(
             HomeHeroCard(
                 title = top.song.title,
                 subtitle = heroSubtitle,
-                thumbnailUrl = top.song.thumbnailUrl,
+                thumbnailUrl = top.song.thumbnailUrl?.resize(1200, 1200),
                 onPlay = {
                     deps.playerConnection.playQueue(
                         ListQueue(

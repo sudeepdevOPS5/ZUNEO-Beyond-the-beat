@@ -28,27 +28,31 @@ data class MusicTwoRowItemRenderer(
             navigationEndpoint.browseEndpoint
                 ?.browseEndpointContextSupportedConfigs
                 ?.browseEndpointContextMusicConfig
-                ?.pageType ==
-                MUSIC_PAGE_TYPE_PLAYLIST
+                ?.pageType in listOf(
+                    MUSIC_PAGE_TYPE_PLAYLIST,
+                    "MUSIC_PAGE_TYPE_PODCAST_SHOW_DETAIL_PAGE",
+                    "MUSIC_PAGE_TYPE_PODCAST_EPISODE_DETAIL_PAGE"
+                ) ||
+                navigationEndpoint.browseEndpoint?.browseId?.startsWith("MPSP") == true ||
+                navigationEndpoint.browseEndpoint?.browseId?.startsWith("VL") == true
     val isAlbum: Boolean
         get() =
             navigationEndpoint.browseEndpoint
                 ?.browseEndpointContextSupportedConfigs
                 ?.browseEndpointContextMusicConfig
-                ?.pageType ==
-                MUSIC_PAGE_TYPE_ALBUM ||
-                navigationEndpoint.browseEndpoint
-                    ?.browseEndpointContextSupportedConfigs
-                    ?.browseEndpointContextMusicConfig
-                    ?.pageType ==
-                MUSIC_PAGE_TYPE_AUDIOBOOK
+                ?.pageType in listOf(
+                    MUSIC_PAGE_TYPE_ALBUM,
+                    MUSIC_PAGE_TYPE_AUDIOBOOK
+                ) ||
+                navigationEndpoint.browseEndpoint?.browseId?.startsWith("MPRE") == true
     val isArtist: Boolean
         get() =
             navigationEndpoint.browseEndpoint
                 ?.browseEndpointContextSupportedConfigs
                 ?.browseEndpointContextMusicConfig
                 ?.pageType ==
-                MUSIC_PAGE_TYPE_ARTIST
+                MUSIC_PAGE_TYPE_ARTIST ||
+                navigationEndpoint.browseEndpoint?.browseId?.startsWith("UC") == true
 
     val musicVideoType: String?
         get() =
