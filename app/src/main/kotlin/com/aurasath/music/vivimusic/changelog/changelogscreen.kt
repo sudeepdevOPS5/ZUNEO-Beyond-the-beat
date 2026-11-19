@@ -141,7 +141,7 @@ fun ChangelogScreen(
                         showingCached = true
                     }
                 } else {
-                    val changelogUrl = URL("https://github.com/mohammedarsath-ars/AURASATH/releases/download/$tag/changelog.json")
+                    val changelogUrl = URL("https://github.com/sudeepdevOPS5/ZUNEO-Beyond-the-beat/releases/download/$tag/changelog.json")
                     val connection = changelogUrl.openConnection() as HttpURLConnection
                     connection.setRequestProperty("User-Agent", "ViviMusic-Changelog-App")
                     connection.setRequestProperty("Accept", "application/json")
@@ -214,7 +214,7 @@ fun ChangelogScreen(
         isFetchingOldReleases = true
         coroutineScope.launch(Dispatchers.IO) {
             try {
-                val releasesUrl = URL("https://api.github.com/repos/mohammedarsath-ars/AURASATH/releases")
+                val releasesUrl = URL("https://api.github.com/repos/sudeepdevOPS5/ZUNEO-Beyond-the-beat/releases")
                 val connection = releasesUrl.openConnection() as HttpURLConnection
                 connection.setRequestProperty("User-Agent", "ViviMusic-Changelog-App")
                 connection.setRequestProperty("Accept", "application/vnd.github+json")

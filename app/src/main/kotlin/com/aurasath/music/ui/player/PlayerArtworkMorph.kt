@@ -206,7 +206,7 @@ fun PlayerArtworkMorphOverlay(
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(thumbnailUrl)
-                .size(CoilSize(full.width.toInt(), full.height.toInt()))
+                .size(CoilSize(full.width.toInt().coerceAtLeast(1), full.height.toInt().coerceAtLeast(1)))
                 .crossfade(false)
                 .build(),
             contentDescription = null,

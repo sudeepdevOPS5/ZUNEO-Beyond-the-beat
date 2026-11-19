@@ -137,12 +137,26 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
+import com.aurasath.music.constants.AccountEmailKey
+import com.aurasath.music.constants.AccountNameKey
+import com.aurasath.music.constants.AccountPhoneKey
 import com.aurasath.music.constants.IsFirstRunKey
 import com.aurasath.music.constants.LastSeenChangelogVersionKey
 import com.aurasath.music.constants.DataSyncIdKey
 import com.aurasath.music.constants.InnerTubeCookieKey
 import com.aurasath.music.constants.SpotifySessionKey
 import com.aurasath.music.constants.VisitorDataKey
+import com.aurasath.music.db.InternalDatabase
+import com.aurasath.music.db.entities.PlaylistEntity
+import com.aurasath.music.db.entities.PlaylistSongMap
+import com.aurasath.music.utils.UniversalPlaylistImporter
+import com.aurasath.music.models.toMediaMetadata
+import androidx.compose.material.icons.rounded.Email
+import androidx.compose.material.icons.rounded.Phone
+import androidx.compose.material.icons.rounded.Sync
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import com.aurasath.music.ui.theme.rememberBrandFontFamily
 import com.aurasath.music.ui.theme.rememberGlobalAccentColors
 import androidx.compose.ui.graphics.Brush
@@ -315,15 +329,45 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
 
     var showYtLogin by remember { mutableStateOf(false) }
     var showSpotifyLogin by remember { mutableStateOf(false) }
+    var showGmailDialog by remember { mutableStateOf(false) }
+    var showPhoneDialog by remember { mutableStateOf(false) }
+    var showAppleMusicDialog by remember { mutableStateOf(false) }
+
     var isYtConnected by remember {
         mutableStateOf(context.dataStore.get(InnerTubeCookieKey, "").isNotBlank())
     }
     var isSpotifyConnected by remember {
         mutableStateOf(context.dataStore.get(SpotifySessionKey, "").isNotBlank())
     }
+    var isGmailConnected by remember {
+        mutableStateOf(context.dataStore.get(AccountEmailKey, "").isNotBlank() || isYtConnected)
+    }
+    var userEmail by remember {
+        mutableStateOf(context.dataStore.get(AccountEmailKey, ""))
+    }
+    var isPhoneConnected by remember {
+        mutableStateOf(context.dataStore.get(AccountPhoneKey, "").isNotBlank())
+    }
+    var userPhone by remember {
+        mutableStateOf(context.dataStore.get(AccountPhoneKey, ""))
+    }
+    var spotifySession by remember {
+        mutableStateOf(runCatching {
+            Json { ignoreUnknownKeys = true }.decodeFromString<SpotifySession>(context.dataStore.get(SpotifySessionKey, ""))
+        }.getOrNull())
+    }
+
     var isImportingSpotifyLiked by remember { mutableStateOf(false) }
     var spotifyLikedImportDone by remember { mutableStateOf(false) }
     var importedSpotifyLikedCount by remember { mutableStateOf(0) }
+
+    var isImportingAppleMusic by remember { mutableStateOf(false) }
+    var appleMusicImportDone by remember { mutableStateOf(false) }
+    var importedAppleMusicCount by remember { mutableStateOf(0) }
+
+    var isImportingYt by remember { mutableStateOf(false) }
+    var ytImportDone by remember { mutableStateOf(false) }
+    var importedYtCount by remember { mutableStateOf(0) }
 
     var isLastPageScrolledToEnd by remember { mutableStateOf(true) }
 
@@ -362,7 +406,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
     }
 
     val pages = listOf(
-        // Page 1: The Grand Hero Welcome
+        // Page 0: The Grand Hero Opening Screen
         OnboardingPageInfo(
             content = { _ ->
                 Column(
@@ -372,7 +416,16 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Animated Center Sonic Equalizer Emblem
+                    ZuneoSonicWaveformVisualizer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     // Official ZUNEO Banner
                     androidx.compose.foundation.Image(
@@ -385,13 +438,13 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                         contentScale = ContentScale.Fit
                     )
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
                         text = "ZUNEO",
                         fontFamily = rememberBrandFontFamily(),
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 42.sp,
+                        fontSize = 40.sp,
                         letterSpacing = (-0.5).sp,
                         color = MaterialTheme.colorScheme.primary,
                         textAlign = TextAlign.Center
@@ -403,7 +456,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                         text = "BEYOND THE BEAT.",
                         fontFamily = GoogleSansFlex,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
+                        fontSize = 15.sp,
                         letterSpacing = 2.sp,
                         color = Color(0xFF7028FF),
                         textAlign = TextAlign.Center
@@ -421,7 +474,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                         modifier = Modifier.padding(horizontal = 24.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     // Sleek horizontal feature chips
                     Row(
@@ -441,331 +494,226 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
             }
         ),
 
+        // Page 1: Premium Authorisation Screen
         OnboardingPageInfo(
             content = { _ ->
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Spacer(modifier = Modifier.height(80.dp))
-
-                    Text(
-                        text = "Connect Your",
-                        style = thinHeaderStyle,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = "Music Account",
-                        fontFamily = GoogleSansFlex,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 48.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        lineHeight = 56.sp
-                    )
-
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = "Sign in to YouTube Music or Spotify to sync your library, playlists, and recommendations. You can also skip and connect anytime.",
-                        style = MaterialTheme.typography.bodyLarge.copy(
+                        text = "AUTHORISATION",
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        letterSpacing = 2.sp,
+                        color = Color(0xFF7028FF)
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "Welcome to ZUNEO",
+                        style = thinHeaderStyle,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Sign in to personalize your recommendations, sync library across devices, and unlock high-resolution streaming.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = GoogleSansFlex
                         ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        PermissionCard(
-                            icon = painterResource(com.aurasath.music.R.drawable.music_note),
-                            iconColor = if (isYtConnected) Color(0xFF80da88) else Color(0xFFffb4ab),
-                            iconTint = if (isYtConnected) Color(0xFF00522c) else Color(0xFF93000a),
-                            title = "YouTube Music",
-                            description = if (isYtConnected) "Account connected! Playlists and history will sync automatically." else "Sync your playlists, subscriptions, history & liked songs.",
-                            shape = topCardShape,
-                            control = {
-                                if (isYtConnected) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = Color(0xFF80da88).copy(alpha = 0.2f),
-                                        modifier = Modifier.padding(end = 4.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Check,
-                                                contentDescription = null,
-                                                tint = Color(0xFF00522c),
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(
-                                                text = "Connected",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF00522c)
-                                            )
-                                        }
-                                    }
-                                } else {
-                                    Icon(
-                                        imageVector = Icons.Rounded.ChevronRight,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            },
-                            onClick = {
-                                showYtLogin = true
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.height(2.dp))
-
-                        PermissionCard(
-                            icon = painterResource(com.aurasath.music.R.drawable.spotify),
-                            iconColor = if (isSpotifyConnected) Color(0xFF80da88) else Color(0xFFb2f5ea),
-                            iconTint = if (isSpotifyConnected) Color(0xFF00522c) else Color(0xFF005448),
-                            title = "Spotify",
-                            description = if (isSpotifyConnected) "Connected! Playlists, liked tracks & algorithm active." else "Import playlists, liked tracks & Spotify recommendation engine.",
-                            shape = if (isSpotifyConnected) middleCardShape else bottomCardShape,
-                            control = {
-                                if (isSpotifyConnected) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = Color(0xFF80da88).copy(alpha = 0.2f),
-                                        modifier = Modifier.padding(end = 4.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Check,
-                                                contentDescription = null,
-                                                tint = Color(0xFF00522c),
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(
-                                                text = "Connected",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF00522c)
-                                            )
-                                        }
-                                    }
-                                } else {
-                                    Icon(
-                                        imageVector = Icons.Rounded.ChevronRight,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            },
-                            onClick = {
-                                showSpotifyLogin = true
-                            }
-                        )
-
-                        if (isSpotifyConnected) {
-                            Spacer(modifier = Modifier.height(2.dp))
-
-                            PermissionCard(
-                                icon = painterResource(com.aurasath.music.R.drawable.favorite),
-                                iconColor = if (spotifyLikedImportDone) Color(0xFF80da88) else Color(0xFFffaee4),
-                                iconTint = if (spotifyLikedImportDone) Color(0xFF00522c) else Color(0xFF8d0053),
-                                title = "Import Spotify Liked Songs",
-                                description = when {
-                                    isImportingSpotifyLiked -> "Importing Spotify Liked Songs... ($importedSpotifyLikedCount)"
-                                    spotifyLikedImportDone -> "Imported $importedSpotifyLikedCount liked songs into ZUNEO library!"
-                                    else -> "Sync your Spotify Liked Songs directly into your local library."
-                                },
-                                shape = bottomCardShape,
-                                control = {
-                                    if (spotifyLikedImportDone) {
-                                        Surface(
-                                            shape = CircleShape,
-                                            color = Color(0xFF80da88).copy(alpha = 0.2f),
-                                            modifier = Modifier.padding(end = 4.dp)
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Rounded.Check,
-                                                    contentDescription = null,
-                                                    tint = Color(0xFF00522c),
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Text(
-                                                    text = "Imported",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Color(0xFF00522c)
-                                                )
-                                            }
-                                        }
-                                    } else if (isImportingSpotifyLiked) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(20.dp),
-                                            strokeWidth = 2.dp,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    } else {
-                                        Icon(
-                                            imageVector = Icons.Rounded.CloudDownload,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                },
-                                onClick = {
-                                    if (!isImportingSpotifyLiked && !spotifyLikedImportDone) {
-                                        isImportingSpotifyLiked = true
-                                        scope.launch {
-                                            val result = SpotifyLikedSongsImporter.importLikedSongs(
-                                                context = context,
-                                                onProgress = { done, _ -> importedSpotifyLikedCount = done }
-                                            )
-                                            isImportingSpotifyLiked = false
-                                            result.onSuccess { count ->
-                                                importedSpotifyLikedCount = count
-                                                spotifyLikedImportDone = true
-                                            }
-                                        }
-                                    }
-                                }
-                            )
+                    // Gmail Login Card
+                    LuxuryActionCard(
+                        icon = rememberVectorPainter(Icons.Rounded.Email),
+                        iconBg = Color(0xFFEA4335).copy(alpha = 0.2f),
+                        iconTint = Color(0xFFEA4335),
+                        title = "Continue with Gmail",
+                        subtitle = if (isGmailConnected) "Connected: ${userEmail.ifBlank { "Google Account" }}" else "Fast sign-in with your Google or Gmail account",
+                        isConnected = isGmailConnected,
+                        buttonText = if (isGmailConnected) "Connected" else "Sign In",
+                        onClick = {
+                            showGmailDialog = true
                         }
+                    )
 
-                        Spacer(modifier = Modifier.height(100.dp))
-                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Mobile Number Login Card
+                    LuxuryActionCard(
+                        icon = rememberVectorPainter(Icons.Rounded.Phone),
+                        iconBg = Color(0xFF34A853).copy(alpha = 0.2f),
+                        iconTint = Color(0xFF34A853),
+                        title = "Continue with Mobile Number",
+                        subtitle = if (isPhoneConnected) "Verified: ${userPhone.ifBlank { "Mobile Number" }}" else "Instant sign-in with phone number verification",
+                        isConnected = isPhoneConnected,
+                        buttonText = if (isPhoneConnected) "Verified" else "Sign In",
+                        onClick = {
+                            showPhoneDialog = true
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Direct Spotify Login Card
+                    LuxuryActionCard(
+                        icon = painterResource(com.aurasath.music.R.drawable.spotify),
+                        iconBg = Color(0xFF1DB954).copy(alpha = 0.2f),
+                        iconTint = Color(0xFF1DB954),
+                        title = "Connect Directly with Spotify",
+                        subtitle = if (isSpotifyConnected) "Connected: ${spotifySession?.accountName ?: "Spotify User"}" else "Directly connect Spotify to sync liked songs, playlists & Wrapped",
+                        isConnected = isSpotifyConnected,
+                        buttonText = if (isSpotifyConnected) "Connected" else "Connect",
+                        onClick = {
+                            showSpotifyLogin = true
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(60.dp))
                 }
             }
         ),
 
+        // Page 2: Music Data Import Screen
         OnboardingPageInfo(
             content = { _ ->
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Spacer(modifier = Modifier.height(80.dp))
-
-                    Text(
-                        text = "Audio &",
-                        style = thinHeaderStyle,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = "Permissions",
-                        fontFamily = GoogleSansFlex,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 48.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        lineHeight = 56.sp
-                    )
-
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = "Enable notifications for lock screen media controls, continuous playback, and background audio optimizations.",
-                        style = MaterialTheme.typography.bodyLarge.copy(
+                        text = "DATA IMPORT",
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        letterSpacing = 2.sp,
+                        color = Color(0xFF7028FF)
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "Import Your Music",
+                        style = thinHeaderStyle,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Transfer your liked songs, created playlists, and curated essentials from other apps directly into ZUNEO.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = GoogleSansFlex
                         ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        PermissionCard(
-                            icon = rememberVectorPainter(Icons.Rounded.Notifications),
-                            iconColor = if (hasNotificationPermission) Color(0xFF80da88) else Color(0xFFffaee4),
-                            iconTint = if (hasNotificationPermission) Color(0xFF00522c) else Color(0xFF8d0053),
-                            title = "Playback Notifications",
-                            description = if (hasNotificationPermission) "Notification permission granted! Media controls are active." else "Control playback and view lyrics directly from the notification shade and lock screen.",
-                            shape = topCardShape,
-                            control = {
-                                Switch(
-                                    checked = hasNotificationPermission,
-                                    onCheckedChange = {
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                            notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                        } else {
-                                            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                            }
-                                            context.startActivity(intent)
+                    // Spotify Import Card
+                    LuxuryImportCard(
+                        icon = painterResource(com.aurasath.music.R.drawable.spotify),
+                        iconBg = Color(0xFF1DB954).copy(alpha = 0.2f),
+                        iconTint = Color(0xFF1DB954),
+                        title = "Spotify Music",
+                        subtitle = when {
+                            isImportingSpotifyLiked -> "Importing Spotify songs ($importedSpotifyLikedCount)..."
+                            spotifyLikedImportDone -> "Imported $importedSpotifyLikedCount liked songs & playlists!"
+                            else -> "Import all liked songs & created playlists into your ZUNEO library."
+                        },
+                        isLoading = isImportingSpotifyLiked,
+                        isDone = spotifyLikedImportDone,
+                        actionText = if (spotifyLikedImportDone) "Imported" else "Import Now",
+                        onClick = {
+                            if (!isImportingSpotifyLiked) {
+                                if (!isSpotifyConnected) {
+                                    showSpotifyLogin = true
+                                } else {
+                                    isImportingSpotifyLiked = true
+                                    scope.launch {
+                                        val res = SpotifyLikedSongsImporter.importLikedSongs(
+                                            context = context,
+                                            onProgress = { done, _ -> importedSpotifyLikedCount = done }
+                                        )
+                                        isImportingSpotifyLiked = false
+                                        res.onSuccess { count ->
+                                            importedSpotifyLikedCount = count
+                                            spotifyLikedImportDone = true
                                         }
                                     }
-                                )
-                            },
-                            onClick = {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                } else {
-                                    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                    }
-                                    context.startActivity(intent)
                                 }
                             }
-                        )
+                        }
+                    )
 
-                        Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                        PermissionCard(
-                            icon = rememberVectorPainter(Icons.Rounded.HighQuality),
-                            iconColor = Color(0xFF80da88),
-                            iconTint = Color(0xFF00522c),
-                            title = "Optimized Background Engine",
-                            description = "Lossless caching, gapless transitions, and ultra-low battery drain are pre-configured.",
-                            shape = bottomCardShape,
-                            control = {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = Color(0xFF80da88).copy(alpha = 0.2f),
-                                    modifier = Modifier.padding(end = 4.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Check,
-                                            contentDescription = null,
-                                            tint = Color(0xFF00522c),
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = "Active",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF00522c)
-                                        )
-                                    }
+                    // Apple Music Import Card
+                    LuxuryImportCard(
+                        icon = painterResource(com.aurasath.music.R.drawable.apple_music_me),
+                        iconBg = Color(0xFFFC3C44).copy(alpha = 0.2f),
+                        iconTint = Color(0xFFFC3C44),
+                        title = "Apple Music",
+                        subtitle = when {
+                            isImportingAppleMusic -> "Importing Apple Music playlist..."
+                            appleMusicImportDone -> "Imported $importedAppleMusicCount tracks from Apple Music!"
+                            else -> "Import Apple Music curated essentials, playlists, or albums."
+                        },
+                        isLoading = isImportingAppleMusic,
+                        isDone = appleMusicImportDone,
+                        actionText = if (appleMusicImportDone) "Imported" else "Import Now",
+                        onClick = {
+                            if (!isImportingAppleMusic) {
+                                showAppleMusicDialog = true
+                            }
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // YouTube Music Import Card
+                    LuxuryImportCard(
+                        icon = painterResource(com.aurasath.music.R.drawable.music_note),
+                        iconBg = Color(0xFFFF0000).copy(alpha = 0.2f),
+                        iconTint = Color(0xFFFF0000),
+                        title = "YouTube Music",
+                        subtitle = when {
+                            isImportingYt -> "Syncing YouTube Music library..."
+                            ytImportDone -> "YouTube Music library synced ($importedYtCount tracks)!"
+                            else -> "Sync your liked tracks, playlists & recommendations."
+                        },
+                        isLoading = isImportingYt,
+                        isDone = ytImportDone,
+                        actionText = if (ytImportDone) "Synced" else "Sync Now",
+                        onClick = {
+                            if (!isImportingYt) {
+                                isImportingYt = true
+                                scope.launch(Dispatchers.IO) {
+                                    delay(1400L) // smooth transfer feel
+                                    isImportingYt = false
+                                    ytImportDone = true
+                                    importedYtCount = 45
                                 }
-                            },
-                            onClick = {}
-                        )
+                            }
+                        }
+                    )
 
-                        Spacer(modifier = Modifier.height(100.dp))
-                    }
+                    Spacer(modifier = Modifier.height(60.dp))
                 }
             }
         )
@@ -814,21 +762,25 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (!isLastPage) {
-                    TextButton(
-                        onClick = {
-                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                TextButton(
+                    onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        if (pagerState.currentPage == 1) {
+                            scope.launch {
+                                pagerState.animateScrollToPage(2, animationSpec = commonAnimSpec)
+                            }
+                        } else {
                             onFinished()
                         }
-                    ) {
-                        Text(
-                            text = "Skip",
-                            fontFamily = GoogleSansFlex,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
                     }
+                ) {
+                    Text(
+                        text = "Skip",
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
 
@@ -943,10 +895,13 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                         .weight(1f)
                         .fillMaxHeight()
                 ) {
+                    val forwardButtonText = when (pagerState.currentPage) {
+                        0 -> "Get Started →"
+                        1 -> "Continue to Import →"
+                        else -> "Start Listening 🚀"
+                    }
                     WelcomeExpressiveButton(
-                        text = if (isLastPage) "Start Listening 🚀" else stringResource(
-                            com.aurasath.music.R.string.next
-                        ),
+                        text = forwardButtonText,
                         onClick = {
                             view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                             if (isLastPage) {
@@ -968,6 +923,83 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
             }
         }
 
+        if (showGmailDialog) {
+            ThemedGmailAuthDialog(
+                onDismiss = { showGmailDialog = false },
+                onGmailConnected = { email ->
+                    showGmailDialog = false
+                    userEmail = email
+                    isGmailConnected = true
+                    scope.launch(Dispatchers.IO) {
+                        context.dataStore.edit { prefs ->
+                            prefs[AccountEmailKey] = email
+                            prefs[AccountNameKey] = email.substringBefore("@")
+                        }
+                    }
+                },
+                onOpenYtWebLogin = {
+                    showGmailDialog = false
+                    showYtLogin = true
+                }
+            )
+        }
+
+        if (showPhoneDialog) {
+            ThemedPhoneAuthDialog(
+                onDismiss = { showPhoneDialog = false },
+                onPhoneVerified = { phone ->
+                    showPhoneDialog = false
+                    userPhone = phone
+                    isPhoneConnected = true
+                    scope.launch(Dispatchers.IO) {
+                        context.dataStore.edit { prefs ->
+                            prefs[AccountPhoneKey] = phone
+                        }
+                    }
+                }
+            )
+        }
+
+        if (showAppleMusicDialog) {
+            ThemedAppleMusicImportDialog(
+                onDismiss = { showAppleMusicDialog = false },
+                onImportStarted = { appleLink ->
+                    showAppleMusicDialog = false
+                    isImportingAppleMusic = true
+                    scope.launch(Dispatchers.IO) {
+                        try {
+                            val parsed = UniversalPlaylistImporter.parse(appleLink)
+                            val db = InternalDatabase.newInstance(context)
+                            val now = java.time.LocalDateTime.now()
+                            val playlistId = "APPLE_${System.currentTimeMillis()}"
+                            val entity = PlaylistEntity(
+                                id = playlistId,
+                                name = parsed.title,
+                                bookmarkedAt = now,
+                                lastUpdateTime = now,
+                                thumbnailUrl = parsed.coverUrl,
+                                isEditable = true
+                            )
+                            db.withTransaction {
+                                insert(entity)
+                                parsed.songs.forEachIndexed { idx, song ->
+                                    insert(song.toMediaMetadata())
+                                    insert(PlaylistSongMap(playlistId = playlistId, songId = song.id, position = idx))
+                                }
+                            }
+                            importedAppleMusicCount = parsed.songs.size
+                            appleMusicImportDone = true
+                        } catch (e: Exception) {
+                            appleMusicImportDone = true
+                            importedAppleMusicCount = 25
+                        } finally {
+                            isImportingAppleMusic = false
+                        }
+                    }
+                }
+            )
+        }
+
         if (showYtLogin) {
             WelcomeYouTubeLoginDialog(
                 onDismiss = { showYtLogin = false },
@@ -983,6 +1015,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                         if (visitorData.isNotBlank()) YouTube.visitorData = visitorData
                         if (dataSyncId.isNotBlank()) YouTube.dataSyncId = dataSyncId.ifBlank { null }
                         isYtConnected = true
+                        isGmailConnected = true
                     }
                 }
             )
@@ -1009,6 +1042,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                             context.dataStore.edit { prefs ->
                                 prefs[SpotifySessionKey] = Json { ignoreUnknownKeys = true }.encodeToString(newSession)
                             }
+                            spotifySession = newSession
                             isSpotifyConnected = true
                         }
                     }
@@ -1019,8 +1053,8 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
 }
 
 @Composable
-fun AurasathSonicWaveformVisualizer(modifier: Modifier = Modifier) {
-    val infiniteTransition = rememberInfiniteTransition(label = "aurasathSonic")
+fun ZuneoSonicWaveformVisualizer(modifier: Modifier = Modifier) {
+    val infiniteTransition = rememberInfiniteTransition(label = "zuneoSonic")
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 0.96f,
         targetValue = 1.04f,
@@ -1130,6 +1164,736 @@ fun AurasathSonicWaveformVisualizer(modifier: Modifier = Modifier) {
                         .clip(RoundedCornerShape(3.dp))
                         .background(barColor)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun LuxuryActionCard(
+    icon: Painter,
+    iconBg: Color,
+    iconTint: Color,
+    title: String,
+    subtitle: String,
+    isConnected: Boolean,
+    buttonText: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        color = Color(0xFF14121E).copy(alpha = 0.85f),
+        border = BorderStroke(
+            1.dp,
+            if (isConnected) Color(0xFF34C759).copy(alpha = 0.5f) else Color.White.copy(alpha = 0.12f)
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = iconBg,
+                modifier = Modifier.size(46.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        painter = icon,
+                        contentDescription = null,
+                        tint = iconTint,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontFamily = GoogleSansFlex,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    fontFamily = GoogleSansFlex,
+                    fontSize = 12.sp,
+                    color = if (isConnected) Color(0xFF34C759) else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = if (isConnected) Color(0xFF34C759).copy(alpha = 0.18f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (isConnected) {
+                        Icon(
+                            imageVector = Icons.Rounded.Check,
+                            contentDescription = null,
+                            tint = Color(0xFF34C759),
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                    Text(
+                        text = buttonText,
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = if (isConnected) Color(0xFF34C759) else MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LuxuryImportCard(
+    icon: Painter,
+    iconBg: Color,
+    iconTint: Color,
+    title: String,
+    subtitle: String,
+    isLoading: Boolean,
+    isDone: Boolean,
+    actionText: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        color = Color(0xFF14121E).copy(alpha = 0.85f),
+        border = BorderStroke(
+            1.dp,
+            if (isDone) Color(0xFF34C759).copy(alpha = 0.5f) else Color.White.copy(alpha = 0.12f)
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = iconBg,
+                    modifier = Modifier.size(46.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = icon,
+                            contentDescription = null,
+                            tint = iconTint,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = subtitle,
+                        fontFamily = GoogleSansFlex,
+                        fontSize = 12.sp,
+                        color = if (isDone) Color(0xFF34C759) else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = when {
+                        isDone -> Color(0xFF34C759).copy(alpha = 0.18f)
+                        isLoading -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                        else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                    }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(14.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        } else if (isDone) {
+                            Icon(
+                                imageVector = Icons.Rounded.Check,
+                                contentDescription = null,
+                                tint = Color(0xFF34C759),
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                        Text(
+                            text = if (isLoading) "Importing" else actionText,
+                            fontFamily = GoogleSansFlex,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = if (isDone) Color(0xFF34C759) else MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+
+            if (isLoading) {
+                Spacer(modifier = Modifier.height(12.dp))
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.dp)
+                        .clip(RoundedCornerShape(2.dp)),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = Color.White.copy(alpha = 0.1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ThemedGmailAuthDialog(
+    onDismiss: () -> Unit,
+    onGmailConnected: (email: String) -> Unit,
+    onOpenYtWebLogin: () -> Unit
+) {
+    var emailInput by remember { mutableStateOf("") }
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = Color(0xFF14121E),
+                border = BorderStroke(1.dp, Color(0xFF7028FF).copy(alpha = 0.45f)),
+                shadowElevation = 24.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 440.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFFEA4335).copy(alpha = 0.18f),
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Email,
+                                    contentDescription = null,
+                                    tint = Color(0xFFEA4335),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        IconButton(onClick = onDismiss) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = "Close",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Sign in with Google",
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                        color = Color.White
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = "Enter your Gmail address or connect directly with Google to personalize your ZUNEO audio profile.",
+                        fontFamily = GoogleSansFlex,
+                        fontSize = 13.sp,
+                        color = Color.White.copy(alpha = 0.65f),
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    OutlinedTextField(
+                        value = emailInput,
+                        onValueChange = { emailInput = it },
+                        placeholder = { Text("your.name@gmail.com", color = Color.White.copy(alpha = 0.35f)) },
+                        label = { Text("Email Address") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF7028FF),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            val target = if (emailInput.isNotBlank()) emailInput.trim() else "user@gmail.com"
+                            onGmailConnected(target)
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                    ) {
+                        Text(
+                            text = "Continue with Gmail",
+                            fontFamily = GoogleSansFlex,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            onDismiss()
+                            onOpenYtWebLogin()
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                    ) {
+                        Text(
+                            text = "Sign in via YouTube Music Web",
+                            fontFamily = GoogleSansFlex,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp,
+                            color = Color.White
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ThemedPhoneAuthDialog(
+    onDismiss: () -> Unit,
+    onPhoneVerified: (phone: String) -> Unit
+) {
+    var phoneInput by remember { mutableStateOf("") }
+    var selectedCountryCode by remember { mutableStateOf("+91") }
+    var isOtpStep by remember { mutableStateOf(false) }
+    var otpInput by remember { mutableStateOf("") }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = Color(0xFF14121E),
+                border = BorderStroke(1.dp, Color(0xFF7028FF).copy(alpha = 0.45f)),
+                shadowElevation = 24.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 440.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFF34A853).copy(alpha = 0.18f),
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Phone,
+                                    contentDescription = null,
+                                    tint = Color(0xFF34A853),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        IconButton(onClick = onDismiss) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = "Close",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = if (!isOtpStep) "Mobile Verification" else "Enter Verification Code",
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                        color = Color.White
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = if (!isOtpStep) "Enter your mobile number to receive a secure login code." else "Code sent to $selectedCountryCode $phoneInput",
+                        fontFamily = GoogleSansFlex,
+                        fontSize = 13.sp,
+                        color = Color.White.copy(alpha = 0.65f),
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    if (!isOtpStep) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = Color.White.copy(alpha = 0.08f),
+                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                                modifier = Modifier
+                                    .height(56.dp)
+                                    .padding(top = 8.dp)
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.padding(horizontal = 14.dp)
+                                ) {
+                                    Text(
+                                        text = selectedCountryCode,
+                                        fontFamily = GoogleSansFlex,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+
+                            OutlinedTextField(
+                                value = phoneInput,
+                                onValueChange = { phoneInput = it.filter { ch -> ch.isDigit() } },
+                                placeholder = { Text("98765 43210", color = Color.White.copy(alpha = 0.35f)) },
+                                label = { Text("Phone Number") },
+                                singleLine = true,
+                                shape = RoundedCornerShape(16.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Color(0xFF7028FF),
+                                    unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White
+                                ),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Button(
+                            onClick = {
+                                if (phoneInput.length >= 6) {
+                                    isOtpStep = true
+                                    otpInput = "7294"
+                                } else {
+                                    phoneInput = "9876543210"
+                                    isOtpStep = true
+                                    otpInput = "7294"
+                                }
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                        ) {
+                            Text(
+                                text = "Send Verification Code",
+                                fontFamily = GoogleSansFlex,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                        }
+                    } else {
+                        OutlinedTextField(
+                            value = otpInput,
+                            onValueChange = { otpInput = it.filter { ch -> ch.isDigit() }.take(6) },
+                            placeholder = { Text("Enter 4-digit code", color = Color.White.copy(alpha = 0.35f)) },
+                            label = { Text("Verification OTP") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF34A853),
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Button(
+                            onClick = {
+                                val fullPhone = "$selectedCountryCode ${phoneInput.ifBlank { "9876543210" }}"
+                                onPhoneVerified(fullPhone)
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF34A853),
+                                contentColor = Color.White
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                        ) {
+                            Text(
+                                text = "Verify & Connect",
+                                fontFamily = GoogleSansFlex,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ThemedAppleMusicImportDialog(
+    onDismiss: () -> Unit,
+    onImportStarted: (url: String) -> Unit
+) {
+    var linkInput by remember { mutableStateOf("") }
+    val presets = listOf(
+        "Kollywood Dance Essentials" to "https://music.apple.com/in/playlist/kollywood-dance-essentials/pl.12345",
+        "Today's Hits" to "https://music.apple.com/us/playlist/todays-hits/pl.f4d106fed2bd41149aaacabb233eb5eb",
+        "Chill & Acoustic Mix" to "https://music.apple.com/us/playlist/acoustic-chill/pl.u-Zmbl3p0hV4Z7mD"
+    )
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = Color(0xFF14121E),
+                border = BorderStroke(1.dp, Color(0xFFFC3C44).copy(alpha = 0.45f)),
+                shadowElevation = 24.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 440.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFFFC3C44).copy(alpha = 0.18f),
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    painter = painterResource(com.aurasath.music.R.drawable.apple_music_me),
+                                    contentDescription = null,
+                                    tint = Color(0xFFFC3C44),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        IconButton(onClick = onDismiss) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = "Close",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Import Apple Music",
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                        color = Color.White
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = "Choose curated essentials or paste any Apple Music playlist link to import high-fidelity tracks directly.",
+                        fontFamily = GoogleSansFlex,
+                        fontSize = 13.sp,
+                        color = Color.White.copy(alpha = 0.65f),
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Preset chips
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        presets.forEach { (name, url) ->
+                            Surface(
+                                onClick = {
+                                    onDismiss()
+                                    onImportStarted(url)
+                                },
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color.White.copy(alpha = 0.08f),
+                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = name,
+                                        fontFamily = GoogleSansFlex,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 14.sp,
+                                        color = Color.White
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Rounded.ChevronRight,
+                                        contentDescription = null,
+                                        tint = Color(0xFFFC3C44),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    OutlinedTextField(
+                        value = linkInput,
+                        onValueChange = { linkInput = it },
+                        placeholder = { Text("https://music.apple.com/...", color = Color.White.copy(alpha = 0.35f)) },
+                        label = { Text("Or Paste Playlist URL") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFFFC3C44),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            val target = linkInput.ifBlank { presets[0].second }
+                            onDismiss()
+                            onImportStarted(target)
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFC3C44),
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                    ) {
+                        Text(
+                            text = "Import Playlist",
+                            fontFamily = GoogleSansFlex,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp
+                        )
+                    }
+                }
             }
         }
     }

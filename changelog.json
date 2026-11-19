@@ -1,5 +1,5 @@
 {
-  "description": "AURASATH 1.0.0 — Official Debut Flagship Release. Liquid Glass UI, full YouTube Music streaming, synced lyrics, Spotify account login & dual Wrapped playback sync, universal playlist & album importer, smart shuffle, and Discord Rich Presence.",
+  "description": "ZUNEO 1.0.9 — Flagship Release. Liquid Glass UI, full YouTube Music streaming, synced lyrics, Spotify account login & dual Wrapped playback sync, universal playlist & album importer, smart shuffle, and Discord Rich Presence.",
   "image": "",
   "changelog": [
     {
@@ -30,7 +30,7 @@
     {
       "title": "Official Flagship Debut (v1.0.0)",
       "items": [
-        "Welcome to the flagship release of AURASATH — the premier open-source music player with Liquid Glass aesthetic.",
+        "Welcome to the flagship release of ZUNEO — the premier open-source music player with Liquid Glass aesthetic.",
         "Ad-free background streaming and offline caching powered by YouTube Music and ExoPlayer Media3.",
         "Official Discord Rich Presence integration displaying live playback, album art, and artist details."
       ]
@@ -47,7 +47,7 @@
       "title": "Spotify Account & Dual Wrapped Sync",
       "items": [
         "Connect your Spotify account directly in Settings > Account alongside YouTube Music with one-tap login/logout.",
-        "Dual Wrapped Playback Sync: songs played in AURASATH now automatically sync with both your YouTube Music Recap and Spotify Wrapped / Recently Played.",
+        "Dual Wrapped Playback Sync: songs played in ZUNEO now automatically sync with both your YouTube Music Recap and Spotify Wrapped / Recently Played.",
         "Completely fixed Spotify Liked Songs import with robust OAuth token refreshing and multi-tier GraphQL fallback."
       ]
     },
@@ -56,7 +56,7 @@
       "items": [
         "Fixed shuffle loop issue where single tracks repeated indefinitely: turning on shuffle now dynamically spins up an automix of similar genre and style tracks.",
         "Fixed single-track queues by linking YouTube Automix radio (RDAMVM) and related genre tracks automatically across Search, Home, and Suggestions.",
-        "Seamless Autoplay: when reaching the end of a queue with Repeat Off, AURASATH automatically loads more tracks of the same genre so your music never abruptly stops."
+        "Seamless Autoplay: when reaching the end of a queue with Repeat Off, ZUNEO automatically loads more tracks of the same genre so your music never abruptly stops."
       ]
     },
     {

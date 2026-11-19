@@ -162,25 +162,14 @@ fun SettingDialoge(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(15.dp, Alignment.Start)
                     ) {
-                        if (isLoggedIn && !accountImageUrl.isNullOrBlank()) {
-                            AsyncImage(
-                                model = accountImageUrl,
-                                contentDescription = "Profile Photo",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                            )
-                        } else {
-                            Icon(
-                                painter = painterResource(R.drawable.account),
-                                contentDescription = "Account Manager",
-                                tint = onSecondaryColor,
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                            )
-                        }
+                        Icon(
+                            painter = painterResource(R.drawable.account),
+                            contentDescription = "Account Manager",
+                            tint = onSecondaryColor,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                        )
                         Column(
                             verticalArrangement = Arrangement.Top,
                             horizontalAlignment = Alignment.Start
@@ -315,7 +304,7 @@ fun SettingDialoge(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally)
                 ) {
-                    TextButton(onClick = { uriHandler.openUri("https://github.com/mohammedarsath-ars/AURASATH#readme") }) {
+                    TextButton(onClick = { uriHandler.openUri("https://github.com/sudeepdevOPS5/ZUNEO-Beyond-the-beat#readme") }) {
                         Text(
                             text = "Privacy Policy",
                             fontWeight = FontWeight.Light,
@@ -327,7 +316,7 @@ fun SettingDialoge(
                     }
                 
                     Text(text = "•", color = onPrimaryColor)
-                    TextButton(onClick = { uriHandler.openUri("https://github.com/mohammedarsath-ars/AURASATH#readme") }) {
+                    TextButton(onClick = { uriHandler.openUri("https://github.com/sudeepdevOPS5/ZUNEO-Beyond-the-beat#readme") }) {
                         Text(
                             text = "Terms of Service",
                             fontWeight = FontWeight.Light,

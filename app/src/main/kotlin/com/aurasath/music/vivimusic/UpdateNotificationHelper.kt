@@ -32,9 +32,9 @@ object UpdateNotificationHelper {
 
         // Direct download URL format from vivimusicupdater - use the full tag (vX.X.X or bX.X.X) or nightly link
         val apkUrl = if (versionName.contains("nightly", ignoreCase = true)) {
-            "https://nightly.link/mohammedarsath-ars/AURASATH/workflows/nightly.yml/main/aurasath-gms-nightly.zip"
+            "https://nightly.link/sudeepdevOPS5/ZUNEO-Beyond-the-beat/workflows/nightly.yml/main/zuneo-gms-nightly.zip"
         } else {
-            "https://github.com/mohammedarsath-ars/AURASATH/releases/download/$versionName/aurasath-$versionName.apk"
+            "https://github.com/sudeepdevOPS5/ZUNEO-Beyond-the-beat/releases/download/$versionName/ZUNEO-$versionName-Universal.apk"
         }
         val intent = Intent(Intent.ACTION_VIEW, apkUrl.toUri())
 

@@ -1528,7 +1528,8 @@ class MainActivity : ComponentActivity() {
                                     return false
                                 }
 
-                                if (isNewerVersion(currentVersion, latestUpdate.version)) {
+                                // Muted on startup to ensure opening is completely clean and popup-free
+                                if (false && isNewerVersion(currentVersion, latestUpdate.version)) {
                                     pendingUpdate = latestUpdate
                                 }
                             }
@@ -1541,7 +1542,8 @@ class MainActivity : ComponentActivity() {
                             val latestNews = newsResult.getOrNull()
                             if (latestNews != null) {
                                 val currentSeen = lastSeenNewsId
-                                if ((latestNews.id ?: 0L) > currentSeen) {
+                                // Muted on startup to ensure opening is completely clean and popup-free
+                                if (false && (latestNews.id ?: 0L) > currentSeen) {
                                     pendingNews = latestNews
                                 }
                             }
@@ -2346,8 +2348,8 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // Donation prompt removed
-                            com.aurasath.music.ui.component.WhatsNewPromptHost(navController)
+                            // WhatsNewPrompt muted on launch to guarantee zero startup popups
+                            // com.aurasath.music.ui.component.WhatsNewPromptHost(navController)
 
                             // Both float OVER the full-width NavHost, exactly as the
                             // bottom bar does on a phone: nothing reserves layout

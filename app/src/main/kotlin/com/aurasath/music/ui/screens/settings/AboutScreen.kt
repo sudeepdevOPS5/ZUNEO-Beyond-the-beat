@@ -324,7 +324,7 @@ fun AboutScreen(
                         modifier = Modifier
                             .weight(1f)
                             .bounceClick {
-                                uriHandler.safeOpenUri(context, "https://www.instagram.com/freaky____arsu")
+                                uriHandler.safeOpenUri(context, "https://www.instagram.com/_.sudeepeeeyyyy._?evlk=MXFpN2ljdHJjdWdpdg==")
                             }
                     ) {
                         Box(

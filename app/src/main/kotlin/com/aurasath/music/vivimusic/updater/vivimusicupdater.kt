@@ -332,7 +332,7 @@ fun UpdateScreen(navController: NavHostController) {
                                                 ContextCompat.startActivity(context, installIntent, null)
                                             }
                                         } else {
-                                            val urlToDownload = currentStatus.apkUrl ?: "https://github.com/mohammedarsath-ars/AURASATH/releases/download/${currentStatus.version}/aurasath-${currentStatus.version}.apk"
+                                            val urlToDownload = currentStatus.apkUrl ?: "https://github.com/sudeepdevOPS5/ZUNEO-Beyond-the-beat/releases/download/${currentStatus.version}/ZUNEO-${currentStatus.version}-Universal.apk"
                                             val downloadRequest = OneTimeWorkRequestBuilder<UpdateDownloadWorker>()
                                                 .setInputData(workDataOf("apk_url" to urlToDownload, "version" to currentStatus.version, "file_size" to currentStatus.size))
                                                 .addTag("update_download")
@@ -656,12 +656,12 @@ fun isNewerVersion(latestVersion: String, currentVersion: String): Boolean {
 // Returns "" on failure so the UI simply omits the size rather than lying about it.
 private fun fetchNightlyArtifactSize(runId: Long): String = try {
     val artifactsUrl =
-        URL("https://api.github.com/repos/mohammedarsath-ars/AURASATH/actions/runs/$runId/artifacts")
+        URL("https://api.github.com/repos/sudeepdevOPS5/ZUNEO-Beyond-the-beat/actions/runs/$runId/artifacts")
     val artifacts = JSONObject(artifactsUrl.openStream().bufferedReader().use { it.readText() })
         .optJSONArray("artifacts")
     val bytes = (0 until (artifacts?.length() ?: 0))
         .map { artifacts!!.getJSONObject(it) }
-        .firstOrNull { it.optString("name") == "aurasath-gms-nightly" }
+        .firstOrNull { it.optString("name") == "zuneo-gms-nightly" || it.optString("name") == "aurasath-gms-nightly" }
         ?.optLong("size_in_bytes") ?: 0L
     if (bytes > 0) String.format("%.1f", bytes / (1024.0 * 1024.0)) else ""
 } catch (e: Exception) {
@@ -677,7 +677,7 @@ suspend fun checkForUpdate(
 ) {
     withContext(Dispatchers.IO) {
         try {
-            val url = URL("https://api.github.com/repos/mohammedarsath-ars/AURASATH/releases")
+            val url = URL("https://api.github.com/repos/sudeepdevOPS5/ZUNEO-Beyond-the-beat/releases")
             val json = url.openStream().bufferedReader().use { it.readText() }
             val releases = JSONArray(json)
             
@@ -689,7 +689,7 @@ suspend fun checkForUpdate(
 
             if (betaEnabled) {
                 try {
-                    val nightlyUrl = URL("https://api.github.com/repos/mohammedarsath-ars/AURASATH/actions/workflows/nightly.yml/runs?status=success&per_page=1")
+                    val nightlyUrl = URL("https://api.github.com/repos/sudeepdevOPS5/ZUNEO-Beyond-the-beat/actions/workflows/nightly.yml/runs?status=success&per_page=1")
                     val nightlyJson = nightlyUrl.openStream().bufferedReader().use { it.readText() }
                     val nightlyData = JSONObject(nightlyJson)
                     val runs = nightlyData.optJSONArray("workflow_runs")
@@ -726,7 +726,7 @@ suspend fun checkForUpdate(
                 changelogList.add(ChangelogSection(context.getString(R.string.changelog), listOf(subjectLine)))
                 
                 val formattedReleaseDate = formatGitHubDate(runUpdatedAt)
-                val apkDownloadUrl = "https://nightly.link/mohammedarsath-ars/AURASATH/workflows/nightly.yml/main/aurasath-gms-nightly.zip"
+                val apkDownloadUrl = "https://nightly.link/sudeepdevOPS5/ZUNEO-Beyond-the-beat/workflows/nightly.yml/main/zuneo-gms-nightly.zip"
                 val apkSize = fetchNightlyArtifactSize(nightlyRunObject.getLong("id"))
                 withContext(Dispatchers.Main) {
                     onSuccess(displayTag, true, changelogList, apkSize, formattedReleaseDate, "Bleeding-edge nightly build from main branch.", null, apkDownloadUrl)
@@ -797,7 +797,7 @@ suspend fun checkForUpdate(
                     var imageUrl: String? = null
                     try {
                         val changelogUrl =
-                            URL("https://github.com/mohammedarsath-ars/AURASATH/releases/download/$tagWithPrefix/changelog.json")
+                            URL("https://github.com/sudeepdevOPS5/ZUNEO-Beyond-the-beat/releases/download/$tagWithPrefix/changelog.json")
                         val changelogJson = changelogUrl.openStream().bufferedReader().use { it.readText() }
                         val changelogData = JSONObject(changelogJson)
 

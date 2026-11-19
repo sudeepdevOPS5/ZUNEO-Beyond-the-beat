@@ -190,33 +190,20 @@ fun AccountSettingsScreen(
                 title = stringResource(R.string.settings),
                 items = listOf(
                     Material3SettingsItem(
-                        icon = if (isLoggedIn && !accountImageUrl.isNullOrBlank()) null else painterResource(R.drawable.login),
+                        icon = painterResource(R.drawable.account),
                         title = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (isLoggedIn && !accountImageUrl.isNullOrBlank()) {
-                                    AsyncImage(
-                                        model = accountImageUrl,
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .clip(CircleShape)
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                }
-                                Column {
+                            Column {
+                                Text(
+                                    text = if (isLoggedIn) accountName else stringResource(R.string.login),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                )
+                                if (isLoggedIn) {
                                     Text(
-                                        text = if (isLoggedIn) accountName else stringResource(R.string.login),
-                                        color = MaterialTheme.colorScheme.primary,
-                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                        text = "Connected to YouTube Music",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
-                                    if (isLoggedIn) {
-                                        Text(
-                                            text = "Connected to YouTube Music",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
                                 }
                             }
                         },
@@ -248,32 +235,19 @@ fun AccountSettingsScreen(
                 title = "Spotify Account",
                 items = listOfNotNull(
                     Material3SettingsItem(
-                        icon = if (isSpotifyLoggedIn && !spotifySession?.accountAvatarUrl.isNullOrBlank()) null else painterResource(R.drawable.spotify),
+                        icon = painterResource(R.drawable.spotify),
                         title = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (isSpotifyLoggedIn && !spotifySession?.accountAvatarUrl.isNullOrBlank()) {
-                                    AsyncImage(
-                                        model = spotifySession.accountAvatarUrl,
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .clip(CircleShape)
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                }
-                                Column {
-                                    Text(
-                                        text = if (isSpotifyLoggedIn) (spotifySession?.accountName?.takeIf { it.isNotBlank() } ?: "Connected Spotify Account") else "Log in with Spotify",
-                                        color = MaterialTheme.colorScheme.primary,
-                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                                    )
-                                    Text(
-                                        text = if (isSpotifyLoggedIn) "Connected • Listening syncs with Spotify Wrapped" else "Log in to sync with Spotify Wrapped & import playlists",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                            Column {
+                                Text(
+                                    text = if (isSpotifyLoggedIn) (spotifySession?.accountName?.takeIf { it.isNotBlank() } ?: "Connected Spotify Account") else "Log in with Spotify",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                )
+                                Text(
+                                    text = if (isSpotifyLoggedIn) "Connected • Listening syncs with Spotify Wrapped" else "Log in to sync with Spotify Wrapped & import playlists",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         },
                         trailingContent = if (isSpotifyLoggedIn) ({
@@ -332,13 +306,11 @@ fun AccountSettingsScreen(
                     items = savedAccounts.map { account ->
                         Material3SettingsItem(
                             leadingContent = {
-                                AsyncImage(
-                                    model = account.thumbnailUrl,
+                                Icon(
+                                    painter = painterResource(R.drawable.account),
                                     contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    placeholder = painterResource(R.drawable.person),
-                                    error = painterResource(R.drawable.person),
-                                    modifier = Modifier.size(40.dp).clip(CircleShape),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(32.dp).clip(CircleShape),
                                 )
                             },
                             title = { Text(account.name) },
