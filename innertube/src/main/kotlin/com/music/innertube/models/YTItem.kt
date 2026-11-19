@@ -111,3 +111,19 @@ fun <T : YTItem> List<T>.filterYoutubeShorts(enabled: Boolean = false) =
     } else {
         this
     }
+
+fun sanitizeSongTitle(raw: String?): String {
+    if (raw.isNullOrBlank()) return raw.orEmpty()
+    var t = raw.trim()
+    // 1. Remove YouTube video banners: " - Video Song", " - Official Video", " | Full Video Song", etc.
+    t = t.replace(Regex("""(?i)\s*[-|–—]\s*(video\s*song|official\s*(music\s*)?video|full\s*video(\s*song)?|lyric(s|\s*video)?|lyrical(\s*video)?|promo(\s*video)?|audio\s*song)\b.*"""), "")
+    // 2. Remove bracketed / parenthetical video tags: (Video Song), (Official Video), [Official Music Video], etc.
+    t = t.replace(Regex("""(?i)\s*[\(\[]\s*(official\s*(music\s*)?video|video\s*song|full\s*video(\s*song)?|lyric(s|\s*video)?|lyrical(\s*video)?|4k\s*video|hd\s*video|visualizer|audio\s*song)\s*[\)\]]"""), "")
+    // 3. Remove trailing artist / star credits after | if it was a video title
+    if (t.contains("|")) {
+        t = t.substringBefore("|").trim()
+    }
+    // 4. Remove trailing dash/hyphen
+    t = t.replace(Regex("""\s*[-|–—]\s*$"""), "").trim()
+    return if (t.isNotBlank()) t else raw
+}

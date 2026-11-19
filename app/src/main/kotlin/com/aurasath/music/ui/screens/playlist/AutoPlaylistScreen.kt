@@ -71,6 +71,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -338,7 +339,7 @@ fun AutoPlaylistScreen(
                     contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
                 ) {
                     item(key = "header_title") {
-                        Spacer(Modifier.height(40.dp))
+                        Spacer(Modifier.height(8.dp))
                     }
 
                     if (filteredSongs.isEmpty() && !isSearching) {
@@ -391,6 +392,7 @@ fun AutoPlaylistScreen(
                         if (filteredSongs.isNotEmpty() && !isSearching) {
                             item(key = "playlist_header") {
                                 AutoPlaylistHeader(
+                                    playlist = viewModel.playlist,
                                     songs = filteredSongs,
                                     titleRes = titleRes,
                                     iconRes = iconRes,
@@ -702,6 +704,7 @@ fun AutoPlaylistScreen(
 
 @Composable
 private fun AutoPlaylistHeader(
+    playlist: String,
     songs: List<Song>,
     titleRes: Int,
     iconRes: Int,
@@ -718,36 +721,48 @@ private fun AutoPlaylistHeader(
     val tint = rememberHeroTint(heroUrl)
     val onTint = AppleTokens.onColor(tint)
 
+    val badgeGradient = when (playlist) {
+        "liked" -> Brush.linearGradient(listOf(Color(0xFF8A2BE2), Color(0xFFFF007A)))
+        "downloaded" -> Brush.linearGradient(listOf(Color(0xFF0072FF), Color(0xFF00C9A7)))
+        "local" -> Brush.linearGradient(listOf(Color(0xFF11998E), Color(0xFF38EF7D)))
+        else -> Brush.linearGradient(listOf(Color(0xFFFF512F), Color(0xFFF09819)))
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(bottom = 24.dp),
+            .padding(bottom = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(8.dp))
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(horizontal = 24.dp),
+        // Hero Badge Card (Spotify/Apple Music Flagship Style)
+        Box(
+            modifier = Modifier
+                .size(96.dp)
+                .clip(ContinuousRoundedRectangle(22.dp))
+                .background(badgeGradient),
+            contentAlignment = Alignment.Center,
         ) {
             Icon(
                 painter = painterResource(iconRes),
                 contentDescription = null,
-                modifier = Modifier.size(28.dp),
-                tint = onTint,
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = stringResource(titleRes),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                color = onTint,
+                modifier = Modifier.size(46.dp),
+                tint = Color.White,
             )
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(16.dp))
+
+        Text(
+            text = stringResource(titleRes),
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            color = onTint,
+        )
+
+        Spacer(Modifier.height(6.dp))
 
         Text(
             text = buildString {
@@ -761,7 +776,7 @@ private fun AutoPlaylistHeader(
             color = onTint.copy(alpha = 0.7f),
         )
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(20.dp))
 
         Row(
             modifier = Modifier

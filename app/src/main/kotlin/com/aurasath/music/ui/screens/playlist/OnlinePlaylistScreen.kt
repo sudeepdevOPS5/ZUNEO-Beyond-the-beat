@@ -348,7 +348,16 @@ fun OnlinePlaylistScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(tint),
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        tint,
+                        tint.copy(alpha = 0.85f),
+                        tint.copy(alpha = 0.4f),
+                        screenBackground,
+                    )
+                )
+            ),
     ) {
       HeroTintedContent(tint = tint, backdrop = heroBackdrop) {
         // Built INSIDE the provider so liquidGlass captures heroBackdrop, not the

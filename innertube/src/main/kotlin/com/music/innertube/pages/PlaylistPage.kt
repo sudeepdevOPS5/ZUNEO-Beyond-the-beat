@@ -9,6 +9,7 @@ import com.music.innertube.models.oddElements
 import com.music.innertube.models.splitBySeparator
 import com.music.innertube.utils.parseTime
 import com.music.innertube.models.YTItem
+import com.music.innertube.models.sanitizeSongTitle
 
 data class PlaylistPage(
     val playlist: PlaylistItem,
@@ -40,9 +41,11 @@ data class PlaylistPage(
                     ?.text?.runs?.firstOrNull()
                     ?.navigationEndpoint?.watchEndpoint?.videoId
                 ?: return null,
-                title = renderer.flexColumns.firstOrNull()
-                    ?.musicResponsiveListItemFlexColumnRenderer?.text
-                    ?.runs?.firstOrNull()?.text ?: return null,
+                title = sanitizeSongTitle(
+                    renderer.flexColumns.firstOrNull()
+                        ?.musicResponsiveListItemFlexColumnRenderer?.text
+                        ?.runs?.firstOrNull()?.text ?: return null
+                ),
                 artists = secondaryLineRuns?.firstOrNull()?.oddElements()?.map {
                     Artist(
                         name = it.text,

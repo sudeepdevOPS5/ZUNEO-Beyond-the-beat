@@ -17,6 +17,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import com.aurasath.music.ui.component.shapes.ContinuousRoundedRectangle
+import com.music.innertube.models.sanitizeSongTitle
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
@@ -162,20 +165,34 @@ inline fun ListItem(
     flat: Boolean = false,
 ) {
     val onSurface = LocalContentColor.current
+    val displayTitle = remember(title) { sanitizeSongTitle(title) }
+    val activeShape = ContinuousRoundedRectangle(14.dp)
     Column(modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .padding(vertical = 2.dp)
                 .height(ListItemHeight)
-                .padding(horizontal = AppleTokens.Gutter)
-                .clip(if (flat) RectangleShape else shape)
-                .background(
-                    color = when {
-                        isActive -> onSurface.copy(alpha = 0.15f)
-                        isSelected == true && drawHighlight -> onSurface.copy(alpha = 0.1f)
-                        else -> Color.Transparent
-                    }
+                .padding(horizontal = if (isActive || (isSelected == true && drawHighlight)) 8.dp else AppleTokens.Gutter)
+                .clip(if (isActive || (isSelected == true && drawHighlight)) activeShape else (if (flat) RectangleShape else shape))
+                .then(
+                    if (isActive) {
+                        Modifier
+                            .background(
+                                color = Color.White.copy(alpha = 0.12f),
+                                shape = activeShape,
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = Color.White.copy(alpha = 0.18f),
+                                shape = activeShape,
+                            )
+                    } else if (isSelected == true && drawHighlight) {
+                        Modifier.background(
+                            color = onSurface.copy(alpha = 0.1f),
+                            shape = activeShape,
+                        )
+                    } else Modifier
                 )
         ) {
             Box(
@@ -211,7 +228,7 @@ inline fun ListItem(
                     .padding(horizontal = 6.dp)
             ) {
                 Text(
-                    text = title,
+                    text = displayTitle,
                     fontSize = AppleTokens.ItemTitle,
                     lineHeight = AppleTokens.ItemTitleLineHeight,
                     color = onSurface,
@@ -239,7 +256,7 @@ inline fun ListItem(
                 trailingContent()
             }
         }
-        if (flat) {
+        if (flat && !isActive) {
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = AppleTokens.Gutter),
                 color = AppleTokens.divider,
@@ -502,6 +519,7 @@ fun SongListItem(
                         isActive = isActive,
                         isPlaying = isPlaying,
                         shape = ThumbnailRoundedShape,
+                        forceContentScale = ContentScale.Crop,
                         targetSizePx = thumbnailPx(ListThumbnailSize),
                         modifier = Modifier.size(ListThumbnailSize)
                     )
@@ -1218,6 +1236,7 @@ fun MediaMetadataListItem(
                 isActive = isActive,
                 isPlaying = isPlaying,
                 shape = ThumbnailRoundedShape,
+                forceContentScale = ContentScale.Crop,
                 targetSizePx = thumbnailPx(ListThumbnailSize),
                 modifier = Modifier.size(ListThumbnailSize)
             )
@@ -1327,6 +1346,7 @@ fun YouTubeListItem(
                     // List rows keep one artwork shape for every item type; the circle
                     // stays on artist tiles and heroes, where it reads as a portrait.
                     shape = ThumbnailRoundedShape,
+                    forceContentScale = ContentScale.Crop,
                     targetSizePx = thumbnailPx(ListThumbnailSize),
                     // Songs open the player, not a detail screen with a hero, so they
                     // stay out of the artwork morph -- the sheet has its own transition.
@@ -1953,7 +1973,7 @@ fun SwipeToSongBox(
             modifier = Modifier
                 .offset { IntOffset(offset.floatValue.roundToInt(), 0) }
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface),
+                .background(if (offset.floatValue != 0f) MaterialTheme.colorScheme.surface else Color.Transparent),
             content = content
         )
     }

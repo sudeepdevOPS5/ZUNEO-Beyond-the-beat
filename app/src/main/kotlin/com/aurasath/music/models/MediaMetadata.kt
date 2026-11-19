@@ -97,7 +97,7 @@ fun Song.toMediaMetadata() =
 fun SongItem.toMediaMetadata() =
     MediaMetadata(
         id = id,
-        title = title,
+        title = com.music.innertube.models.sanitizeSongTitle(title),
         artists =
         artists.map {
             MediaMetadata.Artist(
