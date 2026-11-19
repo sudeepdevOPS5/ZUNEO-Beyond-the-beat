@@ -1,7 +1,22 @@
 {
-  "description": "ZUNEO 1.0.9 — Flagship Release. Liquid Glass UI, full YouTube Music streaming, synced lyrics, Spotify account login & dual Wrapped playback sync, universal playlist & album importer, smart shuffle, and Discord Rich Presence.",
+  "description": "ZUNEO 1.0.10 — Stability & Auto-Update Patch. Critical SQLiteDatabaseLockedException fix via single-threaded transaction executor & singleton connection pooling, automatic in-app update notifications enabled by default, and repository URL alignments.",
   "image": "",
   "changelog": [
+    {
+      "title": "Database Concurrency & Crash Hotfix",
+      "items": [
+        "Resolved SQLiteDatabaseLockedException (code 5 SQLITE_BUSY) by serializing write transactions with a dedicated single-threaded executor.",
+        "Converted InternalDatabase to a strict thread-safe singleton, eliminating competing connection pools across WelcomeActivity, Spotify import, and background workers.",
+        "Configured PRAGMA busy_timeout = 60000 to cleanly wait for locks during high-throughput playlist imports."
+      ]
+    },
+    {
+      "title": "Automatic In-App Update Notifications",
+      "items": [
+        "Enabled automatic GitHub update checks by default so users are immediately notified when a new ZUNEO build is available.",
+        "Integrated in-app update dialog directly into app launch with release highlights and direct download action."
+      ]
+    },
     {
       "title": "Smart Sleep Fade & Audio Polish",
       "items": [

@@ -62,7 +62,7 @@ class DiscordRPC(
                 button2Text.ifEmpty { "Visit ZUNEO" },
                 song
             )
-            buttonsList.add(resolvedText to "https://github.com/mohammedarsath-ars/AURASATH")
+            buttonsList.add(resolvedText to "https://github.com/sudeepdevOPS5/ZUNEO-Beyond-the-beat")
         }
 
         val type = when (activityType) {

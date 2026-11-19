@@ -1507,10 +1507,42 @@ class MainActivity : ComponentActivity() {
 
 
                     try {
+                        checkForUpdate(
+                            context = this@MainActivity,
+                            onSuccess = { latestVersion, isAvailable, changelog, _, date, description, _, apkUrl ->
+                                if (isAvailable) {
+                                    val resolvedApkUrl = apkUrl ?: "https://github.com/sudeepdevOPS5/ZUNEO-Beyond-the-beat/releases/download/$latestVersion/ZUNEO-$latestVersion-Universal.apk"
+                                    val changelogSummary = if (changelog.isNotEmpty()) {
+                                        changelog.joinToString("\n") { section ->
+                                            "${section.title}:\n" + section.items.joinToString("\n") { "• $it" }
+                                        }
+                                    } else {
+                                        description ?: "A new version of ZUNEO ($latestVersion) is available with improvements and fixes."
+                                    }
+                                    pendingUpdate = com.aurasath.music.AppUpdateRow(
+                                        id = System.currentTimeMillis(),
+                                        version = latestVersion,
+                                        title = "New Update Available: $latestVersion",
+                                        description = changelogSummary,
+                                        apk_url = resolvedApkUrl,
+                                        update_type = "optional",
+                                        created_at = date
+                                    )
+                                }
+                            },
+                            onError = {
+                                Timber.tag("UpdateCheck").e("In-app update check failed")
+                            }
+                        )
+                    } catch (e: Exception) {
+                        Timber.tag("UpdateCheck").e(e, "Error checking GitHub updates")
+                    }
+
+                    try {
                         val updateResult = com.aurasath.music.api.SupabaseService.checkLatestUpdate()
                         if (updateResult.isSuccess) {
                             val latestUpdate = updateResult.getOrNull()
-                            if (latestUpdate != null) {
+                            if (latestUpdate != null && pendingUpdate == null) {
                                 val currentVersion = com.aurasath.music.BuildConfig.VERSION_NAME
                                 
                                 fun isNewerVersion(current: String, latest: String): Boolean {
@@ -1528,8 +1560,7 @@ class MainActivity : ComponentActivity() {
                                     return false
                                 }
 
-                                // Muted on startup to ensure opening is completely clean and popup-free
-                                if (false && isNewerVersion(currentVersion, latestUpdate.version)) {
+                                if (isNewerVersion(currentVersion, latestUpdate.version)) {
                                     pendingUpdate = latestUpdate
                                 }
                             }

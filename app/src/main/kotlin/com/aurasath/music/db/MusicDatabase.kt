@@ -164,7 +164,17 @@ abstract class InternalDatabase : RoomDatabase() {
     companion object {
         const val DB_NAME = "song.db"
 
-        fun newInstance(context: Context): MusicDatabase =
+        @Volatile
+        private var INSTANCE: MusicDatabase? = null
+
+        fun getInstance(context: Context): MusicDatabase =
+            INSTANCE ?: synchronized(this) {
+                INSTANCE ?: buildDatabase(context.applicationContext).also { INSTANCE = it }
+            }
+
+        fun newInstance(context: Context): MusicDatabase = getInstance(context)
+
+        private fun buildDatabase(context: Context): MusicDatabase =
             MusicDatabase(
                 delegate =
                 Room
@@ -178,16 +188,16 @@ abstract class InternalDatabase : RoomDatabase() {
                     )
                     .fallbackToDestructiveMigration(dropAllTables = true)
                     .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-                    .setTransactionExecutor(java.util.concurrent.Executors.newFixedThreadPool(4))
+                    .setTransactionExecutor(java.util.concurrent.Executors.newSingleThreadExecutor())
                     .setQueryExecutor(java.util.concurrent.Executors.newFixedThreadPool(4))
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onOpen(db: SupportSQLiteDatabase) {
                             super.onOpen(db)
                             try {
-                                db.query("PRAGMA busy_timeout = 60000").close()
-                                db.query("PRAGMA cache_size = -16000").close()
-                                db.query("PRAGMA wal_autocheckpoint = 1000").close()
-                                db.query("PRAGMA synchronous = NORMAL").close()
+                                db.execSQL("PRAGMA busy_timeout = 60000;")
+                                db.execSQL("PRAGMA cache_size = -16000;")
+                                db.execSQL("PRAGMA wal_autocheckpoint = 1000;")
+                                db.execSQL("PRAGMA synchronous = NORMAL;")
                             } catch (e: Exception) {
                                 Timber.tag("MusicDatabase").e(e, "Failed to set PRAGMA settings")
                             }
